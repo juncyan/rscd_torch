@@ -5,8 +5,6 @@ from ..layers import *
 from ..resnet import resnet34, resnet50
 from .module import *
 
-
-
 class F3Net_FSA3(nn.Module):
     def __init__(self,in_channels=3, num_classes=2):
         super().__init__()
@@ -19,7 +17,7 @@ class F3Net_FSA3(nn.Module):
         self.lkff3 = FSA(256, 3)
         self.lkff4 = FSA(512, 3)
 
-        self.ppm = PMM(512, 512)
+        self.ppm = PMM(512)
         
         self.up1 = Up(1024, 256)#CFDF(1024, 256, 7)
         self.up2 = Up(512, 128)

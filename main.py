@@ -56,7 +56,7 @@ dataset_name = "CLCD"
 # dataset_name = "SYSCD_d"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 num_classes = 2
-batch_size = 8
+batch_size = 4
 num_epochs = 200 
 
 
