@@ -24,8 +24,8 @@ class LargeKernelBlock(nn.Module):
         return self.activate(y)
 
 
-class LKFF(nn.Module):
-    # Large kernels feature fusion
+class FSA(nn.Module):
+    # fEATURE SIFTING AND AGGREGATION 
     def __init__(self, in_channel, kernel=7):
         super().__init__()
         self.cbr1 = ConvBNReLU(2 * in_channel, in_channel, 3, 1)
@@ -128,40 +128,25 @@ class SFF(nn.Module):
         y = self.gamma * feat + x
         return y
 
-class PFF(nn.Module):
-    def __init__(self, in_channels, out_channels, dilations=[1, 6, 12, 18]):
+class PMM(nn.Module):
+    def __init__(self, in_channels, **kwargs):
         super().__init__()
-
-        self.aspp_blocks = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, 3, padding=d, dilation=d, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(inplace=True)
-            ) for d in dilations
-        ])
-
-        self.global_avg_pool = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Conv2d(in_channels, out_channels, 1, stride=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-
-        self.conv = nn.Conv2d(out_channels * (len(dilations)), out_channels, 1)
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.conv_b = nn.Conv2d(in_channels, in_channels // 8, 1)
+        self.conv_c = nn.Conv2d(in_channels, in_channels // 8, 1)
+        self.conv_d = nn.Conv2d(in_channels, in_channels, 1)
+        self.alpha = nn.Parameter(torch.zeros(1))
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x):
-        avg = self.global_avg_pool(x)
-        x_aspp = [aspp(x) for aspp in self.aspp_blocks]
-        # for asp in x_aspp:
-        #     print(asp.shape)
-        x_aspp = torch.cat(x_aspp, dim=1)
+        batch_size, _, height, width = x.size()
+        feat_b = self.conv_b(x).view(batch_size, -1, height * width).permute(0, 2, 1)
+        feat_c = self.conv_c(x).view(batch_size, -1, height * width)
+        attention_s = self.softmax(torch.bmm(feat_b, feat_c))
+        feat_d = self.conv_d(x).view(batch_size, -1, height * width)
+        feat_e = torch.bmm(feat_d, attention_s.permute(0, 2, 1)).view(batch_size, -1, height, width)
+        out = self.alpha * feat_e + x
 
-        x = self.conv(x_aspp)
-        x = self.bn(x)
-        x = self.relu(x)
-        return x * avg
+        return out
 
 class PyramidPoolingModule(nn.Module):
     def __init__(self, pyramids=[1,2,3,6]):
@@ -256,6 +241,4 @@ class SpikingNeuron(nn.Module):
 if __name__ == "__main__":
     print("spp")
     x = torch.rand([1, 16, 256, 256]).cuda()
-    m = LKFF(16).to('gpu')
-    y = m(x,x)
-    print(y.shape)
+    
