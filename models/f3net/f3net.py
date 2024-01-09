@@ -5,21 +5,22 @@ from ..layers import *
 from ..resnet import resnet34, resnet50
 from .module import *
 
-class F3Net_FSA3(nn.Module):
+class F3Net_CFDF3(nn.Module):
     def __init__(self,in_channels=3, num_classes=2):
         super().__init__()
+        kernels = 3
         self.in_channels = in_channels
         self.encode1 = backbone(in_channels)#(3, 34)
         self.encode2 = backbone(in_channels)
 
-        self.lkff1 = FSA(64, 3)
-        self.lkff2 = FSA(128, 3)
-        self.lkff3 = FSA(256, 3)
-        self.lkff4 = FSA(512, 3)
+        self.lkff1 = BTF(64)#FSA(64, kernels)
+        self.lkff2 = BTF(128)#FSA(128, kernels)
+        self.lkff3 = BTF(256)#FSA(256, kernels)
+        self.lkff4 = BTF(512)#FSA(512, kernels)
 
         self.ppm = PMM(512)
         
-        self.up1 = Up(1024, 256)#CFDF(1024, 256, 7)
+        self.up1 = CFDF(1024, 256, kernels)
         self.up2 = Up(512, 128)
         self.up3 = Up(256, 64)
         self.up4 = Up(128, 64)
@@ -47,8 +48,17 @@ class F3Net_FSA3(nn.Module):
         return self.classier(y)
 
 
-class DoubleConv(nn.Module):
+class BTF(nn.Module):
+    def __init__(self, in_channels):
+        super().__init__()
+        self.zip = ConvBNReLU(2 * in_channels, in_channels, 3)
+    
+    def forward(self, x1, x2):
+        x = torch.concat([x1, x2], 1)
+        y = self.zip(x)
+        return y
 
+class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels, mid_channels=None):
         super().__init__()
         if not mid_channels:

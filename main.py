@@ -37,7 +37,7 @@ from cd_models.icifnet import ICIFNet
 from cd_models.dsifn import DSIFN
 from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
-from models.f3net import F3Net_FSA3
+from models.f3net import F3Net_CFDF3
 from models.msfgnet.model import MSFGNet
 from common import Args
 
@@ -57,7 +57,7 @@ dataset_name = "CLCD"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 num_classes = 2
 batch_size = 4
-num_epochs = 200 
+num_epochs = 100 
 
 
 def seed_torch(seed=2022):
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     # model = BIT_CD()
     # model = SiamUnet_diff(3,2)
     # model = MSFGNet()
-    model = F3Net_FSA3()
+    model = F3Net_CFDF3()
 
     model_name = model.__str__().split("(")[0]
     args = Args('output/{}'.format(dataset_name.lower()), model_name)

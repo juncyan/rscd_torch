@@ -61,7 +61,7 @@ class PMM(nn.Module):
 class CISConv(nn.Module):
     def __init__(self, in_ch, out_ch, kernel_size=3, stride=1, padding=1, dilation=3, groups=1, dilation_set=4,
                  bias=False):
-        super(PSConv, self).__init__()
+        super(CISConv, self).__init__()
         self.prim = nn.Conv2d(in_ch, out_ch, kernel_size, stride, padding=dilation, dilation=dilation,
                               groups=groups * dilation_set, bias=bias)
         self.prim_shift = nn.Conv2d(in_ch, out_ch, kernel_size, stride, padding=2 * dilation, dilation=2 * dilation,
@@ -100,7 +100,6 @@ class CFDF(nn.Module):
         y = self.zip_ch(x)
         y1 = self.native(y)
         y2 = self.aux(y1)
-        y1 = self.ppmn(y1)
         y = torch.cat([y1, y2], 1)
         
         return self.outcbr(y)
