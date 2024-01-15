@@ -5,8 +5,8 @@ from ..layers import *
 import numpy as np
 
 
-class FSA(nn.Module):
-    # fEATURE SIFTING AND AGGREGATION 
+class FFA(nn.Module):
+    # fEATURE FUSING AND AGGREGATION 
     def __init__(self, in_channel, kernels=7):
         super().__init__()
         self.cbr1 = ConvBNReLU(2 * in_channel, in_channel, 3, 1)

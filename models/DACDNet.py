@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .layers import ConvBNReLU
-from ..cdnetworks.utils import *
+from ..cd_models.utils import *
 
 class SFF(nn.Module):
     def __init__(self, in_channels, out_size=[32, 32], blocks=[1, 2, 4, 6], pool=F.adaptive_max_pool2d):

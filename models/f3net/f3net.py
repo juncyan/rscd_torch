@@ -5,23 +5,23 @@ from ..layers import *
 from ..resnet import resnet34, resnet50
 from .module import *
 
-class F3Net_K3(nn.Module):
+class F3Net(nn.Module):
     def __init__(self,in_channels=3, num_classes=2):
         super().__init__()
-        kernels = 3
+        kernels = 7
         self.in_channels = in_channels
         self.encode1 = backbone(in_channels)#(3, 34)
         self.encode2 = backbone(in_channels)
 
-        self.lkff1 = FSA(64, kernels)
-        self.lkff2 = FSA(128, kernels)
-        self.lkff3 = FSA(256, kernels)
-        self.lkff4 = FSA(512, kernels)
+        self.lkff1 = FFA(64, kernels)
+        self.lkff2 = FFA(128, kernels)
+        self.lkff3 = FFA(256, kernels)
+        self.lkff4 = FFA(512, kernels)
 
         self.ppm = PMM(512)
         
         self.up1 = CFDF(1024, 256, kernels)
-        self.up2 = Up(512,128)#CFDF(512, 128, kernels)
+        self.up2 = CFDF(512, 128, kernels)
         self.up3 = Up(256, 64)
         self.up4 = Up(128, 64)
         
