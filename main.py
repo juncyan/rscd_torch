@@ -37,8 +37,7 @@ from cd_models.icifnet import ICIFNet
 from cd_models.dsifn import DSIFN
 from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
-from models.f3net import F3Net
-from models.msfgnet.model import MSFGNet
+
 from common import Args
 
 
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     # model = LEDNet(args.num_classes,"resnet50")
     # model = BiSeNet(args.num_classes)
     # model = DFANet(num_classes, norm_layer=torch.nn.BatchNorm2d)
-    # model = UNet(6, num_classes)
+    model = UNet(6, num_classes)
     # model = PSPNet(num_classes, pretrained_base=False)
     # model = HRNet(num_classes)
     # model = FCN32s(num_classes, aux=True, pretrained_base=False)
@@ -105,8 +104,6 @@ if __name__ == "__main__":
     # model = LKUChange()
     # model = BIT_CD()
     # model = SiamUnet_diff(3,2)
-    # model = MSFGNet()
-    model = F3Net_K9()
 
     model_name = model.__str__().split("(")[0]
     args = Args('output/{}'.format(dataset_name.lower()), model_name)
