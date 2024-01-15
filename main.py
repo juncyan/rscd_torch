@@ -106,7 +106,7 @@ if __name__ == "__main__":
     # model = BIT_CD()
     # model = SiamUnet_diff(3,2)
     # model = MSFGNet()
-    model = F3Net()
+    model = F3Net_K9()
 
     model_name = model.__str__().split("(")[0]
     args = Args('output/{}'.format(dataset_name.lower()), model_name)
