@@ -24,14 +24,15 @@ def one_hot_it(label, label_info):
 class CDReader(data.Dataset):
     def __init__(self,path_root="./dataset/",mode="train", en_edge=False):
         super(CDReader,self).__init__()
-        self.path_root = path_root
         self.en_edge = en_edge
 
-        self.data_list = self._get_list(os.path.join(path_root, f"{mode}_list.txt"))
+        self.data_list = self._get_list(os.path.join(path_root, mode))
         self.data_num = len(self.data_list)
 
         self.label_info = pd.read_csv(os.path.join(path_root, 'label_info.csv'))
         self.label_color = np.array([[1,0],[0,1]])
+
+        self.path_root = os.path.join(path_root, mode)
 
         self.sst1_images = []
         self.sst1_edge = []
@@ -89,11 +90,11 @@ class CDReader(data.Dataset):
 
     def _get_list(self, list_path):
         
-        data_list = None
+        # data_list = None
         
-        with open(list_path, 'r') as f:
-            data_list = f.read().split('\n')[:-1]
-        return data_list
+        # with open(list_path, 'r') as f:
+        #     data_list = f.read().split('\n')[:-1]
+        # return data_list
         data_list = os.listdir(os.path.join(list_path,'A'))
         return data_list
 

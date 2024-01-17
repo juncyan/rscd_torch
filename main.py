@@ -8,7 +8,6 @@ import random
 import os
 
 # 基础功能
-from dataset.dataloader import DataReader
 from dataset.CDReader import CDReader, TestReader
 from work.train import train
 
