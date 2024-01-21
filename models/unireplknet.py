@@ -26,14 +26,13 @@ has_mmseg = False
 #   =============== ignore the following two segments of code if you do not plan to do so
 #   =============== delete one of the following two segments if you get a confliction
 try:
-    from mmsegmentation.mmseg.models.builder import BACKBONES as seg_BACKBONES
-    from mmsegmentation.mmseg.utils import get_root_logger
+    from mmseg.models.builder import BACKBONES as seg_BACKBONES
+    from mmseg.utils import get_root_logger
     from mmcv.runner import _load_checkpoint
     has_mmseg = True
 except ImportError:
     get_root_logger = None
     _load_checkpoint = None
-
 
 # try:
 #     from mmdet.models.builder import BACKBONES as det_BACKBONES
