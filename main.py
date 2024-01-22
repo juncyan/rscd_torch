@@ -101,7 +101,7 @@ if __name__ == "__main__":
     # model = DSIFN()
     # model = LKAUChange()
     # model = LKUChange()
-    # model = BIT_CD()
+    model = BIT_CD()
     # model = SiamUnet_diff(3,2)
 
     model_name = model.__str__().split("(")[0]
@@ -135,11 +135,4 @@ if __name__ == "__main__":
     model = model.to('cuda', dtype=torch.float)
     # model.load_state_dict(torch.load("/home/jq/Code/torch/output/levir_d/SiamUnet_diff_2023_10_26_16/SiamUnet_diff_best.pth"))
     train(model, dataloader_train, dataloader_eval, dataloader_test, args)
-    # try:
-    #     model = model.cuda()
-    #     train(model, dataloader_train, dataloader_eval, args)
-    #
-    # except Exception as e:
-    #     print(e)
-    # except EnvironmentError as e:
-    #     print(e)
+    
