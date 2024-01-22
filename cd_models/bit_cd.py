@@ -367,6 +367,7 @@ class BASE_Transformer(ResNet):
 
     def forward(self, x1, x2):
         # forward backbone resnet
+        
         x1 = self.forward_single(x1)
         x2 = self.forward_single(x2)
 
