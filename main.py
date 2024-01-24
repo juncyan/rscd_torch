@@ -19,7 +19,7 @@ from core.models.denseaspp import DenseASPP
 from core.models.hrnet import HRNet
 from core.models.dfanet import DFANet
 from core.models.fcn import FCN32s
-from cd_models.croplandcdnet.model.network import CDNet
+from cd_models.mscanet.model import MSCANet
 from cd_models.aernet import AERNet
 from cd_models.ResUnet import ResUnet
 from cd_models.a2net import LightweightRSCDNet
@@ -36,6 +36,7 @@ from cd_models.icifnet import ICIFNet
 from cd_models.dsifn import DSIFN
 from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
+from cd_models.bisrnet import BiSRNet
 
 from common import Args
 
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     # model = LEDNet(args.num_classes,"resnet50")
     # model = BiSeNet(args.num_classes)
     # model = DFANet(num_classes, norm_layer=torch.nn.BatchNorm2d)
-    model = UNet(6, num_classes)
+    # model = UNet(6, num_classes)
     # model = PSPNet(num_classes, pretrained_base=False)
     # model = HRNet(num_classes)
     # model = FCN32s(num_classes, aux=True, pretrained_base=False)
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     # model = DSIFN()
     # model = LKAUChange()
     # model = LKUChange()
-    model = BIT_CD()
+    model = BiSRNet()
     # model = SiamUnet_diff(3,2)
 
     model_name = model.__str__().split("(")[0]

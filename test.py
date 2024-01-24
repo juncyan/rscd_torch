@@ -1,8 +1,8 @@
 import torch
-from pslknet.model import PSLKNet
+from cd_models.bisrnet import BiSRNet
 
-
-x = torch.randn([2,3,512,512]).cuda()
-m = PSLKNet().cuda()
+x = torch.rand([2,3,256,256]).cuda()
+m = BiSRNet().cuda()
 y = m(x, x)
-print(y.shape)
+for i in y:
+    print(i.shape)

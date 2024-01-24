@@ -65,9 +65,9 @@ class Classifier(nn.Module):
         x = self.head(x)
         return x
 
-class CDNet(nn.Module):
+class MSCANet(nn.Module):
     def __init__(self,  backbone='resnet50', output_stride=16, img_size = 512, img_chan=3, chan_num = 32, n_class =2):
-        super(CDNet, self).__init__()
+        super(MSCANet, self).__init__()
         BatchNorm = nn.BatchNorm2d
 
         self.backbone = build_backbone(backbone, output_stride, BatchNorm, img_chan,True)
