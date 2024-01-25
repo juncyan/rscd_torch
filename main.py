@@ -100,10 +100,7 @@ if __name__ == "__main__":
     # model = STANetSA(3)
     # model = ICIFNet(2)
     # model = DSIFN()
-    # model = LKAUChange()
-    # model = LKUChange()
     model = BiSRNet()
-    # model = SiamUnet_diff(3,2)
 
     model_name = model.__str__().split("(")[0]
     args = Args('output/{}'.format(dataset_name.lower()), model_name)

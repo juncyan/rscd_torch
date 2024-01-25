@@ -9,7 +9,7 @@ import os
 #基础功能
 from work.utils import get_params
 from work.val import evaluation
-from work.predict import test
+from work.predict import test, test_last
 from work.utils import get_scheduler
 
 
@@ -135,7 +135,7 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
         # images_prediction(model, dataloader_pred, save_dir=save_folder, label_info=label_info)
     
     test(model, dataloader_test, args)
-    
+    test_last(model, dataloader_test, args, os.path.join(args.save_dir, "iter_{}.pth".format(args.iters)))
     
     # torch.save(TNet.state_dict(),save_folder+"last.path")
 
