@@ -31,7 +31,7 @@ from cd_models.dminet import DMINet
 from cd_models.siamunet_diff import SiamUnet_diff
 from cd_models.dsamnet import DSAMNet
 from cd_models.bit_cd import BIT_CD
-from cd_models.SUNnet import SUNnet
+from cd_models.SNUNet import SUNnet
 from cd_models.ResUnet import ResUnet
 from cd_models.icifnet import ICIFNet
 from cd_models.dsifn import DSIFN

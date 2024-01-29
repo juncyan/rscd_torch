@@ -29,7 +29,7 @@ from cd_models.changeformer import ChangeFormerV6
 from cd_models.dminet import DMINet
 from cd_models.siamunet_diff import SiamUnet_diff
 from cd_models.siamunet import SiamUnet_conc
-from cd_models.SUNnet import SUNnet
+from cd_models.SNUNet import SUNnet
 from cd_models.dsamnet import DSAMNet
 from cd_models.stanet import STANetSA
 from cd_models.icifnet import ICIFNet

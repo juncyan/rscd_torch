@@ -36,9 +36,26 @@ class funnel(nn.Module):
         y = self.model(x)
         return y
 
-class SUNnet(nn.Module):
+class SNUNet(nn.Module):
     def __init__(self, in_ch = 3, classier = 2, out_size=[512,512]):
-        super(SUNnet, self).__init__()
+        """
+    The SNUNet implementation based on PaddlePaddle.
+
+    The original article refers to
+        S. Fang, et al., "SNUNet-CD: A Densely Connected Siamese Network for Change 
+        Detection of VHR Images"
+        (https://ieeexplore.ieee.org/document/9355573).
+
+    Note that bilinear interpolation is adopted as the upsampling method, which is 
+        different from the paper.
+
+    Args:
+        in_channels (int): Number of bands of the input images.
+        num_classes (int): Number of target classes.
+        width (int, optional): Output channels of the first convolutional layer. 
+            Default: 32.
+    """
+        super(SNUNet, self).__init__()
         self.out_size = out_size
         self.conv0 = funnel(*[in_ch, 4, 6, 8])
         self.conv0_0 = funnel(*[in_ch, 4, 6, 8])
