@@ -21,7 +21,7 @@ from core.models.denseaspp import DenseASPP
 from core.models.hrnet import HRNet
 from core.models.dfanet import DFANet
 from core.models.fcn import FCN32s
-from cd_models.croplandcdnet.model.network import CDNet
+from cd_models.mscanet.model import MSCANet  #CropLandCD
 from cd_models.aernet import AERNet
 from cd_models.a2net import LightweightRSCDNet
 from cd_models.ussfcnet.ussfcnet import USSFCNet
@@ -31,11 +31,11 @@ from cd_models.dminet import DMINet
 from cd_models.siamunet_diff import SiamUnet_diff
 from cd_models.dsamnet import DSAMNet
 from cd_models.bit_cd import BIT_CD
-from cd_models.SUNet import SUNnet
+from cd_models.SUNnet import SUNnet
 from cd_models.ResUnet import ResUnet
 from cd_models.icifnet import ICIFNet
 from cd_models.dsifn import DSIFN
-
+from cd_models.bisrnet import BiSRNet
 from common import Args
 
 
@@ -48,9 +48,9 @@ from common import Args
 #     batch_size = batch_size
 
 # dataset_name = "GVLM_CD_d"
-dataset_name = "LEVIR_c"
+# dataset_name = "LEVIR_c"
 # dataset_name = "CLCD"
-# dataset_name = "SYSCD_d"
+dataset_name = "SYSCD_d"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # model = HRNet(num_classes)
     # model = FCN32s(num_classes, aux=True, pretrained_base=False)
     # model = CDNet(img_size=512)
-    model = LightweightRSCDNet()
+    model = BiSRNet()
     # model = USSFCNet(in_ch=3).cuda()
     # model = DTCDSCNet()
     # model = SUNnet(4,out_size=[512,512]).cuda()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     test_data = TestReader(dataset_path, mode="test",en_edge=False)
     model = model.cuda()
-    weight_path = r"/home/jq/Code/torch/output/levir_d/LightweightRSCDNet2023_10_18_18/LightweightRSCDNet_best.pth"
+    weight_path = r"/home/jq/Code/torch/output/syscd_d/BiSRNet_2024_01_26_00/iter_100.pth"
     predict(model, test_data, weight_path,test_data.data_name,2)
     # x = torch.rand([1,3,256,256]).cuda()
     # y = model(x,x)

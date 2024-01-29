@@ -83,16 +83,11 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
 
             #optimizer = adjust_lr(optimizer, epoch*iter, max_itr)
             
-
             image1 = image1.cuda()
             image2 = image2.cuda()
             label = label.cuda()
             
-            
             pred = model(image1, image2)
-            
-
-            
             
             if hasattr(model, "loss"):
                 reduced_loss = model.loss(pred, label)
@@ -135,7 +130,8 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
         # images_prediction(model, dataloader_pred, save_dir=save_folder, label_info=label_info)
     
     test(model, dataloader_test, args)
-    test_last(model, dataloader_test, args, os.path.join(args.save_dir, "iter_{}.pth".format(args.iters)))
+    # last_path = os.path.join(args.save_dir, "iter_{}.pth".format(args.iters))
+    # test_last(model, dataloader_test, args, last_path)
     
     # torch.save(TNet.state_dict(),save_folder+"last.path")
 

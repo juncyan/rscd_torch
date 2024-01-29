@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class DepthWiseConv2D(nn.Module):
     def __init__(self, in_channels, kernel, stride, bias=True):

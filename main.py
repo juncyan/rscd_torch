@@ -29,7 +29,7 @@ from cd_models.changeformer import ChangeFormerV6
 from cd_models.dminet import DMINet
 from cd_models.siamunet_diff import SiamUnet_diff
 from cd_models.siamunet import SiamUnet_conc
-from cd_models.SUNet import SUNnet
+from cd_models.SUNnet import SUNnet
 from cd_models.dsamnet import DSAMNet
 from cd_models.stanet import STANetSA
 from cd_models.icifnet import ICIFNet
@@ -37,6 +37,7 @@ from cd_models.dsifn import DSIFN
 from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
 from cd_models.bisrnet import BiSRNet
+from pslknet.model import PSLKNet_k9
 
 from common import Args
 
@@ -49,13 +50,12 @@ from common import Args
 #     batch_size = batch_size
 
 # dataset_name = "GVLM_CD_d"
-# dataset_name = "LEVIR_d"
 # dataset_name = "LEVIR_c"
 dataset_name = "CLCD"
 # dataset_name = "SYSCD_d"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 num_classes = 2
-batch_size = 4
+batch_size = 2
 num_epochs = 100 
 
 
@@ -101,6 +101,7 @@ if __name__ == "__main__":
     # model = ICIFNet(2)
     # model = DSIFN()
     model = BiSRNet()
+    # model = PSLKNet_k9()
 
     model_name = model.__str__().split("(")[0]
     args = Args('output/{}'.format(dataset_name.lower()), model_name)
