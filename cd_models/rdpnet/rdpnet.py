@@ -58,6 +58,16 @@ class up_sampling(nn.Module):
 
 
 class RDPNet(nn.Module):
+#     @article{chen2022rdpnet,
+#     author={Chen, Hongjia and Pu, Fangling and Yang, Rui and Tang, Rui and Xu, Xin},
+#     journal={IEEE Transactions on Geoscience and Remote Sensing}, 
+#     title={RDP-Net: Region Detail Preserving Network for Change Detection}, 
+#     year={2022},
+#     volume={60},
+#     number={},
+#     pages={1-10},
+#     doi={10.1109/TGRS.2022.3227098},
+# }
     def __init__(self, in_ch, out_ch, hid_ch=384):
         super(RDPNet, self).__init__()
         depth = 32
