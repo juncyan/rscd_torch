@@ -29,13 +29,14 @@ from cd_models.changeformer import ChangeFormerV6
 from cd_models.dminet import DMINet
 from cd_models.siamunet_diff import SiamUnet_diff
 from cd_models.siamunet import SiamUnet_conc
-from cd_models.SNUNet import SUNnet
+from cd_models.SNUNet import SNUNet
 from cd_models.dsamnet import DSAMNet
 from cd_models.stanet import STANetSA
 from cd_models.icifnet import ICIFNet
 from cd_models.dsifn import DSIFN
 from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
+from cd_models.rdpnet import RDPNet
 from cd_models.bisrnet import BiSRNet
 from pslknet.model import PSLKNet_k9
 
@@ -55,7 +56,7 @@ dataset_name = "CLCD"
 # dataset_name = "SYSCD_d"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 num_classes = 2
-batch_size = 2
+batch_size = 4
 num_epochs = 100 
 
 
@@ -78,30 +79,9 @@ if __name__ == "__main__":
 
     # mode:["train","eval","test"] or [1,2,3]
 
-    # 模型选择
-    # model = DeepLabV3Plus(6, 2, backbone="xception", pretrained_base=False,dilated=True)
-    # model = DenseASPP(num_classes, pretrained_base=False)
-    # model = LEDNet(args.num_classes,"resnet50")
-    # model = BiSeNet(args.num_classes)
-    # model = DFANet(num_classes, norm_layer=torch.nn.BatchNorm2d)
-    # model = UNet(6, num_classes)
-    # model = PSPNet(num_classes, pretrained_base=False)
-    # model = HRNet(num_classes)
-    # model = FCN32s(num_classes, aux=True, pretrained_base=False)
-    # model = CDNet(img_size=512)
-    # model = LightweightRSCDNet()
-    # model = USSFCNet(in_ch=3)
-    # model = DTCDSCNet()
-    # model = ChangeFormerV6()
-    # model = DMINet()
-    # model = ResUnet()
-    # model = SUNnet(4,out_size=[256,256])
-    # model = DSAMNet(n_class=2)
-    # model = STANetSA(3)
-    # model = ICIFNet(2)
-    # model = DSIFN()
-    model = BiSRNet()
-    # model = PSLKNet_k9()
+    model = RDPNet(3,2)
+
+    
 
     model_name = model.__str__().split("(")[0]
     args = Args('output/{}'.format(dataset_name.lower()), model_name)
