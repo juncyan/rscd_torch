@@ -119,6 +119,19 @@ def generate_matrics_csv(base_path):
         dc = pd.DataFrame(dc, index=indexs)
         dc.to_csv(f"{base_path}/{data_name}_metrics.csv")
 
+def cls_count(label):
+    cls_nums = []
+    color_label = np.array([[0, 0, 0], [255, 255, 255], [0, 128, 0], [0, 0, 128]])
+    for info in color_label:
+        color = info
+        # print("label:\n", label.shape,label)
+        # print("color:\n", color)
+        equality = np.equal(label, color)
+        matrix = np.sum(equality, axis=-1)
+        nums = np.sum(matrix == 3)
+        cls_nums.append(nums)
+    return cls_nums
+
 if __name__ == "__main__":
     print("data_reader.utils run")
     x= ['1','3','5','7','9','0','2','4','6','8']

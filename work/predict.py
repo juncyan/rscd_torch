@@ -16,10 +16,13 @@ import os
 import cv2
 import numpy as np
 import torch
+import pandas as pd
+import glob
 from torch.utils.data import DataLoader
 import datetime 
 from thop import profile
 from common import Metrics
+from common.csver import cls_count
 from common.logger import load_logger
 
 
@@ -225,6 +228,17 @@ def test(model, dataset, args):
     logger.info("[METRICS] Class Dice: " + str(np.round(class_dice, 4)))
     logger.info(f"[PREDICT] model flops is {int(flops)}, params is {int(params)}")
 
+    img_files = glob.glob(os.path.join(img_dir, '*.png'))
+    data = []
+    for img_path in img_files:
+        img = cv2.imread(img_path)
+        lab = cls_count(img)
+        # lab = np.argmax(lab, -1)
+        data.append(lab)
+    if data != []:
+        data = np.array(data)
+        pd.DataFrame(data).to_csv(os.path.join(img_dir, f'{args.model_name}_violin.csv'), header=['TN', 'TP', 'FP', 'FN'], index=False)
+
 
 
 def test_last(model, dataset, args, last_weight_path=None):
@@ -324,4 +338,16 @@ def test_last(model, dataset, args, last_weight_path=None):
     logger.info("[METRICS] Class Recall: " + str(np.round(class_recall, 4)))
     logger.info("[METRICS] Class Dice: " + str(np.round(class_dice, 4)))
     logger.info(f"[PREDICT] model flops is {int(flops)}, params is {int(params)}")
+
+    img_files = glob.glob(os.path.join(img_dir, '*.png'))
+    data = []
+    for img_path in img_files:
+        img = cv2.imread(img_path)
+        lab = cls_count(img)
+        # lab = np.argmax(lab, -1)
+        data.append(lab)
+    if data != []:
+        data = np.array(data)
+        pd.DataFrame(data).to_csv(os.path.join(img_dir, f'{args.model_name}_violin.csv'), header=['TN', 'TP', 'FP', 'FN'], index=False)
+
 
