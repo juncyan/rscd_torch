@@ -5,8 +5,8 @@ from .utils import ConvBnReLU, DepthWiseConv2D
 
 from .blocks import *
 
-class BFIB(nn.Module):
-    #bi-temporal feature integrating block
+class BFELKB(nn.Module):
+    ##bi-temporal feature extraction based large kernel block
     def __init__(self, in_channels, out_channels, kernels = 7, stride=2):
         super().__init__()
         self.fe = LKFE(in_channels, kernels)
@@ -52,8 +52,8 @@ class STAF(nn.Module):
         res = y + td
         return res
 
-class PSBFA(nn.Module):
-    #pseudo siamese bi-temporal feature assimilating module
+class PSAA(nn.Module):
+    #pseudo siamese bi-temporal assimilating assistant module
     def __init__(self, mid_channels=[64, 128, 256, 512]):
         super().__init__()
         self.branch1 = FEBranch(3, mid_channels)
