@@ -38,7 +38,7 @@ from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
 from cd_models.rdpnet import RDPNet
 from cd_models.bisrnet import BiSRNet
-from pslknet.model import PSLKNet_k9
+from pslknet.model import LKPSNet
 
 from common import Args
 

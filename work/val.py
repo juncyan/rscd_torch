@@ -78,7 +78,7 @@ def evaluation(model,dataloader_eval,args):
         args.logger.info("[METRICS] Class Recall: " + str(np.round(class_recall, 4)))
         args.logger.info("[METRICS] Class Dice: " + str(np.round(class_dice, 4)))
         
-        save_numpy_as_csv(args.metric_path,np.array([args.epoch, args.loss, acc, miou, recall ,kappa,macro_f1]))
+        save_numpy_as_csv(args.metric_path,np.array([args.epoch, args.loss, kappa, miou, acc ,recall,macro_f1]))
         return miou
 
 def test_model(model, data, evaluator,save_file_dir,logger,args):
