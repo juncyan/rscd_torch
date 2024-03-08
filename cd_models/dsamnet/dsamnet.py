@@ -10,7 +10,7 @@ from .loss import DiceLoss, BCL
 # CDcriterion1 = DiceLoss().to('cuda', dtype=torch.float)
 
 class DSAMNet(nn.Module):
-    def __init__(self, n_class=1,  ratio = 8, kernel = 7, backbone='resnet18', output_stride=16, f_c=64, freeze_bn=False, in_c=3):
+    def __init__(self, n_class=2,  ratio = 8, kernel = 7, backbone='resnet18', output_stride=16, f_c=64, freeze_bn=False, in_c=3):
         super(DSAMNet, self).__init__()
         BatchNorm = nn.BatchNorm2d
 

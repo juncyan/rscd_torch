@@ -52,8 +52,8 @@ from common import Args
 
 # dataset_name = "GVLM_CD"
 # dataset_name = "LEVIR_CD"
-dataset_name = "CLCD"
-# dataset_name = "SYSU_CD"
+# dataset_name = "CLCD"
+dataset_name = "SYSU_CD"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 num_classes = 2
 batch_size = 4
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     # mode:["train","eval","test"] or [1,2,3]
 
-    model = RDPNet(3,2)
+    model = DSAMNet()
 
     
 
