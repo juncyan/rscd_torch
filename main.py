@@ -52,13 +52,14 @@ from common import Args
 
 # dataset_name = "GVLM_CD"
 # dataset_name = "LEVIR_CD"
-# dataset_name = "CLCD"
-dataset_name = "SYSU_CD"
+dataset_name = "CLCD"
+# dataset_name = "SYSU_CD"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 num_classes = 2
 batch_size = 4
 num_epochs = 100 
 
+model = MSCANet()
 
 def seed_torch(seed=2022):
     random.seed(seed)
@@ -79,9 +80,6 @@ if __name__ == "__main__":
 
     # mode:["train","eval","test"] or [1,2,3]
 
-    model = DSAMNet()
-
-    
 
     model_name = model.__str__().split("(")[0]
     args = Args('output/{}'.format(dataset_name.lower()), model_name)
