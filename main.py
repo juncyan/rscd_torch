@@ -37,8 +37,8 @@ from cd_models.icifnet import ICIFNet
 from cd_models.dsifn import DSIFN
 from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
-from models.f3net import F3Net
 from models.msfgnet.model import MSFGNet
+from f3net.abliation import F3Net_1CFDF
 from common import Args
 
 
@@ -53,7 +53,7 @@ from common import Args
 # dataset_name = "LEVIR_d"
 # dataset_name = "LEVIR_c"
 dataset_name = "CLCD"
-# dataset_name = "SYSCD_d"
+# dataset_name = "SYSU_CD"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 num_classes = 2
 batch_size = 4
@@ -80,33 +80,8 @@ if __name__ == "__main__":
     # mode:["train","eval","test"] or [1,2,3]
 
     # 模型选择
-    # model = DeepLabV3Plus(6, 2, backbone="xception", pretrained_base=False,dilated=True)
-    # model = DenseASPP(num_classes, pretrained_base=False)
-    # model = LEDNet(args.num_classes,"resnet50")
-    # model = BiSeNet(args.num_classes)
-    # model = DFANet(num_classes, norm_layer=torch.nn.BatchNorm2d)
-    # model = UNet(6, num_classes)
-    # model = PSPNet(num_classes, pretrained_base=False)
-    # model = HRNet(num_classes)
-    # model = FCN32s(num_classes, aux=True, pretrained_base=False)
-    # model = CDNet(img_size=512)
-    # model = LightweightRSCDNet()
-    # model = USSFCNet(in_ch=3)
-    # model = DTCDSCNet()
-    # model = ChangeFormerV6()
-    # model = DMINet()
-    # model = ResUnet()
-    # model = SUNnet(4,out_size=[256,256])
-    # model = DSAMNet(n_class=2)
-    # model = STANetSA(3)
-    # model = ICIFNet(2)
-    # model = DSIFN()
-    # model = LKAUChange()
-    # model = LKUChange()
-    # model = BIT_CD()
-    # model = SiamUnet_diff(3,2)
-    # model = MSFGNet()
-    model = F3Net()
+    
+    model = F3Net_1CFDF()
 
     model_name = model.__str__().split("(")[0]
     args = Args('output/{}'.format(dataset_name.lower()), model_name)

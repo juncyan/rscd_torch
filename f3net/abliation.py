@@ -5,7 +5,7 @@ from models.layers import *
 from models.resnet import resnet34, resnet50
 from .module import *
 
-class F3Net(nn.Module):
+class F3Net_1CFDF(nn.Module):
     def __init__(self,in_channels=3, num_classes=2):
         super().__init__()
         kernels = 7
@@ -21,7 +21,7 @@ class F3Net(nn.Module):
         self.ppm = PMM(512)
         
         self.up1 = CFDF(1024, 256, kernels)
-        self.up2 = CFDF(512, 128, kernels)
+        self.up2 = Up(512, 128)#CFDF(512, 128, kernels)
         self.up3 = Up(256, 64)
         self.up4 = Up(128, 64)
         
