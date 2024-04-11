@@ -39,6 +39,7 @@ from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
 from models.msfgnet.model import MSFGNet
 from f3net.abliation import F3Net_1CFDF
+from f3net import F3Net
 from common import Args
 
 
@@ -81,7 +82,7 @@ if __name__ == "__main__":
 
     # 模型选择
     
-    model = F3Net_1CFDF()
+    model = F3Net()
 
     model_name = model.__str__().split("(")[0]
     args = Args('output/{}'.format(dataset_name.lower()), model_name)
