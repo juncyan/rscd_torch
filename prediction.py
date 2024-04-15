@@ -35,6 +35,7 @@ from cd_models.SUNet import SUNnet
 from cd_models.ResUnet import ResUnet
 from cd_models.icifnet import ICIFNet
 from cd_models.dsifn import DSIFN
+from cd_models.cgnet import CGNet
 
 from common import Args
 
@@ -47,8 +48,7 @@ from common import Args
 #     num_epochs = num_epochs
 #     batch_size = batch_size
 
-# dataset_name = "GVLM_CD_d"
-dataset_name = "LEVIR_c"
+dataset_name = "GVLM_CD"
 # dataset_name = "CLCD"
 # dataset_name = "SYSCD_d"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # model = HRNet(num_classes)
     # model = FCN32s(num_classes, aux=True, pretrained_base=False)
     # model = CDNet(img_size=512)
-    model = LightweightRSCDNet()
+    model = CGNet()
     # model = USSFCNet(in_ch=3).cuda()
     # model = DTCDSCNet()
     # model = SUNnet(4,out_size=[512,512]).cuda()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     test_data = TestReader(dataset_path, mode="test",en_edge=False)
     model = model.cuda()
-    weight_path = r"/home/jq/Code/torch/output/levir_d/LightweightRSCDNet2023_10_18_18/LightweightRSCDNet_best.pth"
+    weight_path = r"/home/jq/Code/torch/output/gvlm_cd/CGNet_2024_04_11_22/CGNet_best.pth"
     predict(model, test_data, weight_path,test_data.data_name,2)
     # x = torch.rand([1,3,256,256]).cuda()
     # y = model(x,x)

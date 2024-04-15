@@ -75,24 +75,25 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2):
                 if (type(pred) == tuple) or (type(pred) == list):
                     pred = pred[-1]
 
-            evaluator.add_batch(pred, label)
+            evaluator.add_batch(pred, label) 
             if pred.shape[1] > 1:
                 pred = torch.argmax(pred, axis=1)
-            
             pred = pred.squeeze()
-
+            
             if label.shape[1] > 1:
                 label = torch.argmax(label, axis=1)
             
             label = label.squeeze()
             label = label.cpu().numpy()
-
+            
             for idx, ipred in enumerate(pred):
                 ipred = ipred.cpu().numpy()
+                ipred = np.int8(ipred)
                 if (np.max(ipred) != np.min(ipred)):
                     flag = (label[idx] - ipred)
                     ipred[flag == -1] = 2
                     ipred[flag == 1] = 3
+                    
                     img = color_label[ipred]
                     cv2.imwrite(f"{img_dir}/{name[idx]}", img)
 
@@ -191,6 +192,7 @@ def test(model, dataset, args):
 
             for idx, ipred in enumerate(pred):
                 ipred = ipred.cpu().numpy()
+                ipred = np.int8(ipred)
                 if (np.max(ipred) != np.min(ipred)):
                     flag = (label[idx] - ipred)
                     ipred[flag == -1] = 2

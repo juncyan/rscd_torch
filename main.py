@@ -40,6 +40,7 @@ from cd_models.transunet import TransUNet
 from models.msfgnet.model import MSFGNet
 from f3net.abliation import F3Net_1CFDF
 from f3net import F3Net
+from cd_models.cgnet import CGNet
 from common import Args
 
 
@@ -50,11 +51,10 @@ from common import Args
 #     num_epochs = num_epochs
 #     batch_size = batch_size
 
-dataset_name = "GVLM_CD"
-# dataset_name = "LEVIR_d"
-# dataset_name = "LEVIR_c"
+# dataset_name = "GVLM_CD"
 # dataset_name = "CLCD"
 # dataset_name = "SYSU_CD"
+dataset_name = "LEVIR_CD"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 num_classes = 2
 batch_size = 4
