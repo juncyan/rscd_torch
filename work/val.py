@@ -4,7 +4,8 @@ from work.utils import colour_code_segmentation
 import cv2
 from datetime import datetime
 import os
-from common import Metrics, save_numpy_as_csv
+from common import Metrics
+import pandas as pd
 
 
 def images_prediction(model,data,save_dir,label_info):
@@ -17,7 +18,7 @@ def images_prediction(model,data,save_dir,label_info):
         idx = 0
 
         for _, image in enumerate(data):
-            image = image.cuda()
+            image = image.cuda(1)
             logits = model(image)
             for logit in logits:
                 # logit = logit.squeeze(0)
@@ -40,9 +41,9 @@ def evaluation(model,dataloader_eval,args):
         num_eval = 0
         for _,(image1, image2, label) in enumerate(dataloader_eval):
             num_eval +=1
-            image1 = image1.cuda()
-            image2 = image2.cuda()
-            label = label.cuda()
+            image1 = image1.cuda(args.device)
+            image2 = image2.cuda(args.device)
+            label = label
 
             pred = model(image1, image2)
 
@@ -56,30 +57,24 @@ def evaluation(model,dataloader_eval,args):
             # pred = torch.where(torch.sigmoid(pred) > 0.5, 1, 0)
             # print(pred)
            
-            evaluator.add_batch(pred, label)
+            evaluator.add_batch(pred.cpu(), label)
 
-        evaluator.calc()
-        miou = evaluator.Mean_Intersection_over_Union()
-        acc = evaluator.Pixel_Accuracy()
-        kappa = evaluator.Kappa()
-        recall = evaluator.Mean_Recall()
-        macro_f1 = evaluator.Macro_F1()
-        class_recall = evaluator.Recall()
-        class_iou = evaluator.Intersection_over_Union()
-        class_precision = evaluator.Class_Precision()
-        class_dice = evaluator.Dice()
+    metrics = evaluator.Get_Metric()
+    pa = metrics["pa"]
+    miou = metrics["miou"]
+    mf1 = metrics["mf1"]
+    kappa = metrics["kappa"]
 
+    if args.logger != None:
         args.logger.info("[EVAL] evalution {} images, time: {}".format(num_eval * args.batch_size, datetime.now() - p_start))
-        args.logger.info("[METRICS] Acc:{:.4},mIoU:{:.4},recall:{:.4},kappa:{:.4},Macro_f1:{:.4}".format(
-            acc,miou,recall,kappa,macro_f1))
-
-        args.logger.info("[METRICS] Class IoU: " + str(np.round(class_iou, 4)))
-        args.logger.info("[METRICS] Class Precision: " + str(np.round(class_precision, 4)))
-        args.logger.info("[METRICS] Class Recall: " + str(np.round(class_recall, 4)))
-        args.logger.info("[METRICS] Class Dice: " + str(np.round(class_dice, 4)))
+        args.logger.info("[METRICS] PA:{:.4},mIoU:{:.4},kappa:{:.4},Macro_f1:{:.4}".format(pa,miou,kappa,mf1))
         
-        save_numpy_as_csv(args.metric_path,np.array([args.epoch, args.loss, kappa, miou, acc ,recall,macro_f1]))
-        return miou
+    d = pd.DataFrame([metrics])
+    if os.path.exists(args.metric_path):
+        d.to_csv(args.metric_path,mode='a', index=False, header=False,float_format="%.4f")
+    else:
+        d.to_csv(args.metric_path, index=False,float_format="%.4f")
+    return miou
 
 def test_model(model, data, evaluator,save_file_dir,logger,args):
 
@@ -90,8 +85,8 @@ def test_model(model, data, evaluator,save_file_dir,logger,args):
         num_eval = 0
         for _,(image,label) in enumerate(data):
             num_eval += 1
-            image = image.cuda()
-            label = label.cuda()
+            image = image.cuda(args.device)
+            label = label.cuda(args.device)
 
             pred = model(image)
 

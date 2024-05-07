@@ -9,13 +9,14 @@ import os
 #基础功能
 from work.utils import get_params
 from work.val import evaluation
-from work.predict import test, test_last
+from work.predict import test
 from work.utils import get_scheduler
 
 
 def loss(logits,labels):
     # return nn.BCEWithLogitsLoss()(logits, lab)
-
+    if len(labels.shape) == 4:
+        labels = torch.argmax(labels, 1)
     if logits.shape == labels.shape:
         labels = torch.argmax(labels,dim=1)
     elif len(labels.shape) == 3:
@@ -67,25 +68,17 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
     #criterion = SegmentationLosses(weight=None,cuda=True).build_loss("ce")
 
     for epoch in range(args.iters):
-        # if test:
-        #     test_model(model, dataloader_eval, evaluator,args)
-        #     images_prediction(model, dataloader_pred, save_dir=save_folder, label_info=label_info)
-        #     break
-        # np.random.seed(53113)
-        # torch.manual_seed(53113)
-    #
         now = datetime.datetime.now()
         model.train()
         loss_record = []
-        #evaluator.reset()
 
         for _,(image1, image2, label) in enumerate(dataloader_train):
 
             #optimizer = adjust_lr(optimizer, epoch*iter, max_itr)
             
-            image1 = image1.cuda()
-            image2 = image2.cuda()
-            label = label.cuda()
+            image1 = image1.cuda(args.device)
+            image2 = image2.cuda(args.device)
+            label = label.cuda(args.device)
             
             pred = model(image1, image2)
             
@@ -114,8 +107,6 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
         if (epoch+1) % 10 ==0:
              torch.save(model.state_dict(), os.path.join(args.save_dir, "iter_{}.pth".format(epoch+1)))
         
-        # if miou_eval > max(0.7, max_miou):
-        #     torch.save(model.state_dict(), args.best_model_path)
 
         if miou_eval > max(0.5, max_miou):
             torch.save(model.state_dict(), args.best_model_path)

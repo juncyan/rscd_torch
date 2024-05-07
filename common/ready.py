@@ -16,6 +16,7 @@ class Args():
         self.pred_idx = 0
         self.data_name = ""
         self.model_name = model_name
+        self.device = 0
         
         self.save_dir = os.path.join(dst_dir, r"{}_{}".format(model_name,datetime.datetime.strftime(datetime.datetime.now(), r"%Y_%m_%d_%H")))
         # self.save_predict = os.path.join(self.save_dir , "predict")

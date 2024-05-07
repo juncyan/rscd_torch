@@ -38,28 +38,35 @@ from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
 from cd_models.rdpnet import RDPNet
 from cd_models.bisrnet import BiSRNet
-from pslknet.model import LKPSNet
 
 from common import Args
 
-
-# class parameter:
-#     lr = params["lr"]
-#     momentum = params["momentum"]
-#     weight_decay = params["weight_decay"]
-#     num_epochs = num_epochs
-#     batch_size = batch_size
 
 # dataset_name = "GVLM_CD"
 # dataset_name = "LEVIR_CD"
 dataset_name = "CLCD"
 # dataset_name = "SYSU_CD"
-dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
+# dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
+
+dataset_name = "MacaoCD"
+# dataset_name = "SYSU_CD"
+dataset_path = '/home/jq/data/{}'.format(dataset_name)
+
 num_classes = 2
-batch_size = 4
+batch_size = 8
 num_epochs = 100 
 
-model = MSCANet()
+model = SNUNet(3,2,[256,256])
+
+
+model_name = model.__str__().split("(")[0]
+args = Args('output/{}'.format(dataset_name.lower()), model_name)
+args.data_name = dataset_name
+args.num_classes = num_classes
+args.batch_size = batch_size
+args.iters = num_epochs
+args.pred_idx = 0
+args.device = 1
 
 def seed_torch(seed=2022):
     random.seed(seed)
@@ -74,22 +81,9 @@ if __name__ == "__main__":
     seed_torch(32765)
     torch.cuda.empty_cache()
     torch.cuda.init()
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-    # mode:["train","eval","test"] or [1,2,3]
-
-
-    model_name = model.__str__().split("(")[0]
-    args = Args('output/{}'.format(dataset_name.lower()), model_name)
-    args.data_name = dataset_name
-    args.num_classes = num_classes
-    args.batch_size = batch_size
-    args.iters = num_epochs
-    args.pred_idx = 0
-
-    # pred_data = Reader_Only_Image()
+    os.environ['CUDA_VISIBLE_DEVICES'] = "{}".format(args.device)
+    device = torch.device(args.device)
+    
     eval_data = CDReader(path_root = dataset_path, mode="val", en_edge=False)
     train_data = CDReader(path_root = dataset_path, mode="train", en_edge=False)
     
@@ -99,7 +93,7 @@ if __name__ == "__main__":
     dataloader_train = DataLoader(dataset=train_data, batch_size=args.batch_size, num_workers=16,
                                   shuffle=True, drop_last=True)
     
-    test_data = TestReader(path_root = dataset_path, mode="test", en_edge=False)
+    test_data = TestReader(path_root = dataset_path, mode="val", en_edge=False)
     dataloader_test = DataLoader(dataset=test_data, batch_size=args.batch_size, num_workers=0,
                                   shuffle=True, drop_last=True)
     
@@ -109,7 +103,7 @@ if __name__ == "__main__":
     # except:
     #     args.num_epochs = 300
     #     args.params["lr"] = 0.0005
-    model = model.to('cuda', dtype=torch.float)
+    model = model.to(device, dtype=torch.float)
     # model.load_state_dict(torch.load("/home/jq/Code/torch/output/levir_d/SiamUnet_diff_2023_10_26_16/SiamUnet_diff_best.pth"))
     train(model, dataloader_train, dataloader_eval, dataloader_test, args)
     

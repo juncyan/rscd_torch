@@ -2,8 +2,6 @@ import copyreg
 import types
 import numpy as np
 
-__all__ = ['Metrics']
-
 class Metrics(object):
     def __init__(self, num_class):
         self.__num_class = num_class
@@ -15,7 +13,7 @@ class Metrics(object):
         self.__sum = 0.#np.sum(self.__confusion_matrix)
 
     def Pixel_Accuracy(self):
-        Acc = np.diag(self.__confusion_matrix).sum() / self.__confusion_matrix.sum()
+        Acc = self.__TP.sum() / self.__sum
         return Acc
 
     def Class_Precision(self):
@@ -40,7 +38,7 @@ class Metrics(object):
         return FWIoU
 
     def Kappa(self):
-        P0 = np.sum(self.__TP) / self.__sum
+        P0 = self.Pixel_Accuracy()
         Pe = np.sum(self.__RealP * self.__RealN) / (self.__sum * self.__sum)
         return (P0 - Pe) / (1 - Pe)
 
@@ -66,8 +64,30 @@ class Metrics(object):
         recall = self.__TP / (self.__RealN + 1e-5)
         return recall
     
-    def Mean_Recall(self):
-        return np.nanmean(self.Recall())
+    def Get_Metric(self):
+        self.calc()
+        pa = np.round(self.Pixel_Accuracy(),4)
+        iou = np.round(self.Intersection_over_Union(),4)
+        miou = np.round(np.nanmean(iou),4)
+        prices = np.round(self.Class_Precision(),4)
+        f1 = np.round(self.F1_score(),4)
+        mf1 = np.round(np.nanmean(f1),4)
+        recall = np.round(self.Recall(),4)
+        Pe = np.round(np.sum(self.__RealP * self.__RealN) / (self.__sum * self.__sum),4)
+        kappa =  np.round((pa - Pe) / (1 - Pe),4)
+
+        cls_iou = dict(zip(['iou_'+str(i) for i in range(self.__num_class)], iou))
+        cls_precision = dict(zip(['precision_'+str(i) for i in range(self.__num_class)], prices))
+        cls_recall = dict(zip(['recall_'+str(i) for i in range(self.__num_class)], recall))
+        cls_F1 = dict(zip(['F1_'+str(i) for i in range(self.__num_class)], f1))
+
+        metrics ={"pa":pa, "miou": miou, "mf1":mf1, "kappa":kappa}
+        metrics.update(cls_iou)
+        metrics.update(cls_F1)
+        metrics.update(cls_precision)
+        metrics.update(cls_recall)
+        self.reset()
+        return metrics
 
     def __generate_matrix(self, gt_image, pre_image):
         mask = (gt_image >= 0) & (gt_image < self.__num_class)
@@ -78,26 +98,25 @@ class Metrics(object):
 
     # def add_batch(self, gt_image, pre_image):
     def add_batch(self, pred, lab):
-        
-        pred = np.array(pred.cpu())
-        lab = np.array(lab.cpu())
-
-        if len(lab.shape) == 4 and (lab.shape[1] > 1):
+        pred = np.array(pred)
+        lab = np.array(lab)
+        # print(pred.shape, lab.shape)
+        if len(lab.shape) == 4 and lab.shape[1] != 1:
             lab = np.argmax(lab, axis=1)
 
-        if len(pred.shape) == 4 and (pred.shape[1] > 1):
-            pred = np.argmax(pred, axis=1)   
+        if len(pred.shape) == 4 and pred.shape[1] != 1:
+            pred = np.argmax(pred, axis=1)
 
         gt_image = np.squeeze(lab)
         pre_image = np.squeeze(pred)
-
+        
         assert (np.max(pre_image) <= self.__num_class)
         # assert (len(gt_image) == len(pre_image))
         # print(gt_image.shape)
         # print(pre_image.shape)
         assert gt_image.shape == pre_image.shape
         self.__confusion_matrix += self.__generate_matrix(gt_image, pre_image)
-
+        
     def calc(self):
         self.__TP = np.diag(self.__confusion_matrix)
         self.__RealN = np.sum(self.__confusion_matrix, axis=0)  # TP+FN
@@ -110,6 +129,7 @@ class Metrics(object):
         self.__RealN = 0.  # TP+FN
         self.__RealP = 0.  # TP+FP
         self.__sum = 0.  # np.sum(self.__confusion_matrix)
+
 
 def pixel_accuracy(eval_segm, gt_segm):
     '''
@@ -182,9 +202,9 @@ def Acc_Metric(Mask, GT):
 def Pixel_A(Mask, GT):
     tp = np.sum(np.logical_and(Mask == 1, GT == 1))
     fp = np.sum(np.logical_and(Mask == 1, GT != 1))
-    tn = np.sum(np.logical_and(Mask != 1, GT != 1))
+    # tn = np.sum(np.logical_and(Mask != 1, GT != 1))
     fn = np.sum(np.logical_and(Mask != 1, GT == 1))
-    return tp, fp, tn, fn
+    return tp, fp, fn
 
 
 # def Acc_Metric(Mask,GT):
@@ -437,6 +457,111 @@ def get_iou(data_list, class_num, save_path=None):
     return aveJ, j_list
 
 
+class Evaluator(object):
+    def __init__(self, num_class):
+        self.__num_class = num_class
+        self.__confusion_matrix = np.zeros((self.__num_class,) * 2)
+
+    def Pixel_Accuracy(self):
+        Acc = np.diag(self.__confusion_matrix).sum() / self.__confusion_matrix.sum()
+        return Acc
+
+    def Class_Precision(self):
+        #TP/TP+FP
+        precision = np.diagonal(self.__confusion_matrix) / (self.__confusion_matrix.sum(axis=1) + 1e-5)
+        # Acc = np.nanmean(Acc)
+        return precision
+
+    def Intersection_over_Union(self):
+        IoU = np.diagonal(self.__confusion_matrix) / (1e-5 +
+                                                np.sum(self.__confusion_matrix, axis=1) + np.sum(self.__confusion_matrix,axis=0) -
+                                                np.diagonal(self.__confusion_matrix))
+        return IoU
+
+    def Mean_Intersection_over_Union(self):
+        # MIoU = np.diag(self.__confusion_matrix) / (
+        #             np.sum(self.__confusion_matrix, axis=1) + np.sum(self.__confusion_matrix, axis=0) -
+        #             np.diag(self.__confusion_matrix))
+        # MIoU = np.nanmean(MIoU)
+        IoU = self.Intersection_over_Union()
+        MIoU = np.nanmean(IoU)
+        return MIoU
+
+    def Frequency_Weighted_Intersection_over_Union(self):
+        freq = np.sum(self.__confusion_matrix, axis=1) / np.sum(self.__confusion_matrix)
+        iu = np.diag(self.__confusion_matrix) / (1e-5 +
+                                               np.sum(self.__confusion_matrix, axis=1) + np.sum(self.__confusion_matrix,
+                                                                                              axis=0) -
+                                               np.diag(self.__confusion_matrix))
+
+        FWIoU = (freq[freq > 0] * iu[freq > 0]).sum()
+        return FWIoU
+
+    def Kappa(self):
+        diag = np.diag(self.__confusion_matrix)
+        clo_sum = np.sum(self.__confusion_matrix, axis=0)
+        row_sum = np.sum(self.__confusion_matrix, axis=1)
+        num = np.sum(self.__confusion_matrix)
+        P0 = np.sum(diag) / num
+        Pe = np.sum(row_sum * clo_sum) / (num * num)
+        return (P0 - Pe) / (1 - Pe + 1e-5)
+
+    def F1_score(self, belta=1):
+        TP = np.diag(self.__confusion_matrix)
+        RealN = np.sum(self.__confusion_matrix, axis=0)  # TP+FN
+        RealP = np.sum(self.__confusion_matrix, axis=1)  # TP+FP
+        precision = TP / (RealP + 1e-5)
+        recall = TP / (RealN + 1e-5)
+        f1_score = (1 + belta * belta) * precision * recall / (belta * belta * precision + recall + 1e-5)
+        return f1_score
+
+    def Macro_F1(self, belta=1):
+        return np.nanmean(self.F1_score(belta))
+
+    def Dice(self):
+        dice = 2 * np.diag(self.__confusion_matrix) / (np.sum(self.__confusion_matrix, axis=0) + np.sum(self.__confusion_matrix, axis=1))
+        return dice
+
+    def Mean_Dice(self):
+        dice = self.Dice()
+        return np.nanmean(dice)
+
+    def Recall(self):  # 预测为正确的像素中确认为正确像素的个数
+        #TP/ TP+FN
+        recall = np.diagonal(self.__confusion_matrix) / (np.sum(self.__confusion_matrix, axis=0) + 1e-5)
+        return recall
+
+    def __generate_matrix(self, gt_image, pre_image):
+        mask = (gt_image >= 0) & (gt_image < self.__num_class)
+        label = self.__num_class * gt_image[mask].astype('int') + pre_image[mask]
+        count = np.bincount(label, minlength=self.__num_class ** 2)
+        __confusion_matrix = count.reshape(self.__num_class, self.__num_class)
+        # print("__confusion_matrix:\n", __confusion_matrix)
+        return __confusion_matrix
+
+    # def add_batch(self, gt_image, pre_image):
+    def add_batch(self, pred, lab):
+        pred = np.array(pred.cpu())
+        lab = np.array(lab.cpu())
+
+        if len(lab.shape) == 4:
+            lab = np.argmax(lab, axis=1)
+
+        if len(pred.shape) == 4:
+            pred = np.argmax(pred, axis=1)
+
+        gt_image = np.squeeze(lab)
+        pre_image = np.squeeze(pred)
+
+        assert (np.max(pre_image) <= self.__num_class)
+        assert (len(gt_image) == len(pre_image))
+        # print(gt_image.shape)
+        # print(pre_image.shape)
+        assert gt_image.shape == pre_image.shape
+        self.__confusion_matrix += self.__generate_matrix(gt_image, pre_image)
+
+    def reset(self):
+        self.__confusion_matrix = np.zeros((self.__num_class,) * 2)
 
 
 if __name__ == "__main__":
