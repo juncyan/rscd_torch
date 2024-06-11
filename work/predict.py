@@ -26,7 +26,7 @@ from common.csver import cls_count
 from common.logger import load_logger
 
 
-def predict(model, dataset, weight_path=None, data_name="test", num_classes=2):
+def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, device=0):
     """
     Launch evalution.
 
@@ -54,7 +54,7 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2):
 
     logger = load_logger(f"{img_dir}/prediction.log")
     logger.info(f"test {model_name} on {data_name}")
-    model = model.cuda()
+    model = model.cuda(device)
     
     
     loader = DataLoader(dataset=dataset, batch_size=4, num_workers=0,
@@ -65,8 +65,8 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2):
         for _, (img1, img2, label, name) in enumerate(loader):
 
             label = label
-            img1 = img1.cuda()
-            img2 = img2.cuda()
+            img1 = img1.cuda(device)
+            img2 = img2.cuda(device)
            
             pred = model(img1, img2)
            
@@ -122,7 +122,7 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2):
     # print(batch_cost, reader_cost)
 
     _,c,w,h = img1.shape
-    x= torch.rand([1,c,w,h]).cuda()
+    x= torch.rand([1,c,w,h]).cuda(device)
     flops, params = profile(model, [x,x])
     logger.info(f"[PREDICT] model flops is {int(flops)}, params is {int(params)}")
       
@@ -218,7 +218,7 @@ def test(model, dataset, args):
     # print(batch_cost, reader_cost)
 
     _,c,w,h = img1.shape
-    x= torch.rand([1,c,w,h]).cuda()
+    x= torch.rand([1,c,w,h]).cuda(args.device)
     flops, params = profile(model, [x,x])
     
     logger.info(f"[PREDICT] model flops is {int(flops)}, params is {int(params)}")

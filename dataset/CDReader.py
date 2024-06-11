@@ -26,13 +26,13 @@ class CDReader(data.Dataset):
         super(CDReader,self).__init__()
         self.en_edge = en_edge
 
-        self.data_list = self._get_list(os.path.join(path_root, mode))
+        self.path_root = os.path.join(path_root, mode)
+
+        self.data_list = self._get_list(self.path_root)
         self.data_num = len(self.data_list)
 
         self.label_info = pd.read_csv(os.path.join(path_root, 'label_info.csv'))
         self.label_color = np.array([[1,0],[0,1]])
-
-        self.path_root = os.path.join(path_root, mode)
 
         self.sst1_images = []
         self.sst1_edge = []

@@ -44,19 +44,18 @@ from common import Args
 
 # dataset_name = "GVLM_CD"
 # dataset_name = "LEVIR_CD"
-dataset_name = "CLCD"
+# dataset_name = "CLCD"
 # dataset_name = "SYSU_CD"
-# dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 
 dataset_name = "MacaoCD"
 # dataset_name = "SYSU_CD"
-dataset_path = '/home/jq/data/{}'.format(dataset_name)
+dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 
 num_classes = 2
 batch_size = 8
 num_epochs = 100 
 
-model = SNUNet(3,2,[256,256])
+model = DSAMNet(2)
 
 
 model_name = model.__str__().split("(")[0]

@@ -49,8 +49,9 @@ from common import Args
 
 # dataset_name = "GVLM_CD_d"
 # dataset_name = "LEVIR_c"
-dataset_name = "CLCD"
+# dataset_name = "CLCD"
 # dataset_name = "SYSCD_d"
+dataset_name = "MacaoCD"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 
 
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     # 代码运行预处理
     torch.cuda.empty_cache()
     torch.cuda.init()
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     # model = HRNet(num_classes)
     # model = FCN32s(num_classes, aux=True, pretrained_base=False)
     # model = CDNet(img_size=512)
-    # model = BiSRNet()
+    model = BiSRNet()
     # model = USSFCNet(in_ch=3).cuda()
     # model = DTCDSCNet()
     # model = SUNnet(4,out_size=[512,512]).cuda()
@@ -86,12 +87,12 @@ if __name__ == "__main__":
     # model = BIT_CD().cuda()
     # model = ICIFNet(2).cuda()
     # model = SUNnet()
-    model = DSIFN()
+    # model = DSIFN()
 
-    test_data = TestReader(dataset_path, mode="test",en_edge=False)
-    model = model.cuda()
-    weight_path = r"/home/jq/Code/torch/output/clcd/DSIFN_2023_11_13_11/iter_200.pth"
-    predict(model, test_data, weight_path,test_data.data_name,2)
+    test_data = TestReader(dataset_path, mode="val",en_edge=False)
+    
+    weight_path = r"/home/jq/Code/torch/output/macaocd/BiSRNet_2024_05_06_23/BiSRNet_best.pth"
+    predict(model, test_data, weight_path,test_data.data_name,2,1)
     # x = torch.rand([1,3,256,256]).cuda()
     # y = model(x,x)
     # print(y.shape)    
