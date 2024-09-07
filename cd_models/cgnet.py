@@ -294,9 +294,9 @@ class CGNet(nn.Module):
         pred[pred < 0.5] = 0
         return pred
     
-    @staticmethod
-    def loss(preds, label):
-        ls = nn.BCEWithLogitsLoss()(preds[0], label) + nn.BCEWithLogitsLoss()(preds[1], label)
-        return ls
+    # @staticmethod
+    # def loss(preds, label):
+    #     ls = nn.BCEWithLogitsLoss()(preds[0], label) + nn.BCEWithLogitsLoss()(preds[1], label)
+    #     return ls
 
 

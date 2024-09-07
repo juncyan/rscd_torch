@@ -1,24 +1,14 @@
 # 调用官方库及第三方库
 import torch
-from torch.utils.data import DataLoader
 import numpy as np
+import argparse
 import datetime
 import platform
 import random
 import os
 
-# 基础功能
-from dataset.CDReader import CDReader, TestReader
-from work.train import train
-
 # 模型导入
-from core.models.unet import UNet
-from core.models.deeplabv3_plus import DeepLabV3Plus
-from core.models.pspnet import PSPNet
-from core.models.denseaspp import DenseASPP
-from core.models.hrnet import HRNet
-from core.models.dfanet import DFANet
-from core.models.fcn import FCN32s
+
 from cd_models.mscanet.model import MSCANet
 from cd_models.aernet import AERNet
 from cd_models.ResUnet import ResUnet
@@ -38,71 +28,54 @@ from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
 from cd_models.rdpnet import RDPNet
 from cd_models.bisrnet import BiSRNet
+from cd_models.hanet import HAN
+from cd_models.cgnet import CGNet
 
-from common import Args
-
+from core.work import Work
 
 # dataset_name = "GVLM_CD"
 # dataset_name = "LEVIR_CD"
 # dataset_name = "CLCD"
 # dataset_name = "SYSU_CD"
 
-dataset_name = "MacaoCD"
-# dataset_name = "SYSU_CD"
-dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
-
-num_classes = 2
-batch_size = 8
-num_epochs = 100 
-
-model = DSAMNet(2)
-
-
-model_name = model.__str__().split("(")[0]
-args = Args('output/{}'.format(dataset_name.lower()), model_name)
-args.data_name = dataset_name
-args.num_classes = num_classes
-args.batch_size = batch_size
-args.iters = num_epochs
-args.pred_idx = 0
-args.device = 1
-
-def seed_torch(seed=2022):
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
+def parse_args():
+    parser = argparse.ArgumentParser(description='Semantic Segmentation Overfitting Test')
+    # model
+    parser.add_argument('--model', type=str, default='fssh',
+                        help='model name (default: msfgnet)')
+    parser.add_argument('--img_size', type=int, default=256,
+                        help='input image size (default: 256)')
+    parser.add_argument('--device', type=int, default=0,
+                        choices=[0, 1],
+                        help='device (default: gpu:0)')
+    parser.add_argument('--dataset', type=str, default="CLCD",
+                        help='dataset name (default: LEVIR_CD)')
+    parser.add_argument('--iters', type=int, default=100, metavar='N',
+                        help='number of epochs to train (default: 100)')
+    parser.add_argument('--en_load_edge', type=bool, default=False,
+                        help='en_load_edge False')
+    parser.add_argument('--num_classes', type=int, default=2,
+                        help='num classes (default: 2)')
+    parser.add_argument('--batch_size', type=int, default=4,
+                        help='batch_size (default: 4)')
+    parser.add_argument('--lr', type=float, default=1e-4, metavar='LR',
+                        help='learning rate (default: 1e-4)')
+    parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
+                        help='momentum (default: 0.9)')
+    parser.add_argument('--weight_decay', type=float, default=5e-4, metavar='M',
+                        help='w-decay (default: 5e-4)')
+    parser.add_argument('--num_workers', type=int, default=8,
+                        help='num_workers (default: 8)')
+    args = parser.parse_args()
+    return args
 
 
 if __name__ == "__main__":
     # 代码运行预处理
-    seed_torch(32765)
-    torch.cuda.empty_cache()
-    torch.cuda.init()
-    os.environ['CUDA_VISIBLE_DEVICES'] = "{}".format(args.device)
-    device = torch.device(args.device)
+    print("main")
+    args = parse_args()
+    model = AERNet()
+    w = Work(model, args,'./output')
+    w()
     
-    eval_data = CDReader(path_root = dataset_path, mode="val", en_edge=False)
-    train_data = CDReader(path_root = dataset_path, mode="train", en_edge=False)
-    
-    # dataloader_pred = DataLoader(pred_data, batch_size, num_workers=1)
-    dataloader_eval = DataLoader(dataset=eval_data, batch_size=args.batch_size, num_workers=16,
-                                 shuffle=False, drop_last=True)
-    dataloader_train = DataLoader(dataset=train_data, batch_size=args.batch_size, num_workers=16,
-                                  shuffle=True, drop_last=True)
-    
-    test_data = TestReader(path_root = dataset_path, mode="val", en_edge=False)
-    dataloader_test = DataLoader(dataset=test_data, batch_size=args.batch_size, num_workers=0,
-                                  shuffle=True, drop_last=True)
-    
-    # try:
-    #     model.load_state_dict(torch.load(save_model_dir))
-    #     print("load success")
-    # except:
-    #     args.num_epochs = 300
-    #     args.params["lr"] = 0.0005
-    model = model.to(device, dtype=torch.float)
-    # model.load_state_dict(torch.load("/home/jq/Code/torch/output/levir_d/SiamUnet_diff_2023_10_26_16/SiamUnet_diff_best.pth"))
-    train(model, dataloader_train, dataloader_eval, dataloader_test, args)
     

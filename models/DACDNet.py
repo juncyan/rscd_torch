@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .layers import ConvBNReLU
-from ..cd_models.utils import *
+from cd_models.nn import _ConvBNReLU
 
 class SFF(nn.Module):
     def __init__(self, in_channels, out_size=[32, 32], blocks=[1, 2, 4, 6], pool=F.adaptive_max_pool2d):
@@ -39,12 +39,12 @@ class CBRGroup(nn.Module):
         super(CBRGroup, self).__init__()
         if down:
             self.cbrg = nn.Sequential(
-                ConvBnReLU(in_channels, in_channels//2, 3, 1, 1),
-                ConvBnReLU(in_channels//2, out_channels, 3, 1, 1))
+                _ConvBNReLU(in_channels, in_channels//2, 3, 1, 1),
+                _ConvBNReLU(in_channels//2, out_channels, 3, 1, 1))
         else:
             self.cbrg = nn.Sequential(
-                ConvBnReLU(in_channels, out_channels//2, 3, 1, 1),
-                ConvBnReLU(out_channels//2, out_channels, 3, 1, 1))
+                _ConvBNReLU(in_channels, out_channels//2, 3, 1, 1),
+                _ConvBNReLU(out_channels//2, out_channels, 3, 1, 1))
 
     def forward(self, x):
         return self.cbrg(x)
@@ -86,7 +86,7 @@ class FEModule(nn.Module):
     def __init__(self, in_channels, mid_channels:list=[32,64,128]):
         super(FEModule, self).__init__()
         self.layers = nn.ModuleList()
-        self.layers.append(ConvBnReLU(in_channels, 64, 1, 1))
+        self.layers.append(_ConvBNReLU(in_channels, 64, 1, 1))
         in_channels = 64
         for c in mid_channels:
             self.layers.append(nn.Sequential(nn.Conv2d(in_channels, in_channels, 3,2,1),
@@ -157,10 +157,10 @@ class DSCDNet(nn.Module):
         self.up2 = Up(512, 256 // factor)
         self.up3 = Up(256, 128 // factor)
         self.up4 = Up(128, 64)
-        self.brige4 = ConvBnReLU(1024,512,1,1)
-        self.brige3 = ConvBnReLU(512,256,1,1)
-        self.brige2 = ConvBnReLU(256,128,1,1)
-        self.brige1 = ConvBnReLU(128,64,1,1)
+        self.brige4 = _ConvBNReLU(1024,512,1,1)
+        self.brige3 = _ConvBNReLU(512,256,1,1)
+        self.brige2 = _ConvBNReLU(256,128,1,1)
+        self.brige1 = _ConvBNReLU(128,64,1,1)
         self.outc = nn.Conv2d(64, n_classes, 1)
 
     def forward(self, x):

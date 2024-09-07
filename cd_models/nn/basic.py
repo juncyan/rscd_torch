@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-__all__ = ['_ConvBNPReLU', '_ConvBN', '_BNPReLU', '_ConvBNReLU', '_DepthwiseConv', 'InvertedResidual']
+__all__ = ['_ConvBNPReLU', '_ConvBN', '_BNPReLU', '_ConvBNReLU', '_DepthwiseConv', 'InvertedResidual', '_DropPath']
 
 
 class _ConvBNReLU(nn.Module):
@@ -127,6 +127,27 @@ class InvertedResidual(nn.Module):
         else:
             return self.conv(x)
 
+
+class _DropPath(nn.Module):
+    def __init__(self, drop_prob=0.0):
+        super(_DropPath, self).__init__()
+        self.drop_prob = drop_prob
+
+    def forward(self, x):
+        if self.drop_prob <= 0. or not self.training:
+            return x
+        keep_prob = torch.to_tensor(1-self.drop_prob)
+        shape = (x.shape[0],) + (1, ) *(x.ndim - 1)
+        random_tensor = keep_prob + torch.rand(shape)
+        random_tensor = torch.floor(random_tensor)
+        y = torch.divide(x, keep_prob) * random_tensor
+        return y
+
+    @property
+    def drop_path(self):
+        if self.drop_prob == 0 or not self.training:
+            return 'Identity'
+        return 'Drop_Path'
 
 if __name__ == '__main__':
     x = torch.randn(1, 32, 64, 64)

@@ -6,8 +6,26 @@ import torch.nn.functional as F
 from .bam import BAM
 import torch.utils.model_zoo as model_zoo
 from .coordatt import CoordAtt
+from .bam import SegEvaluator
 
+class WeightedBCEWithLogitsLoss(nn.Module):
+    def __init__(self):
+        super(WeightedBCEWithLogitsLoss,self).__init__()
 
+    def forward(self, inputs, target):
+        evaluator = SegEvaluator(1)
+        evaluator.reset()
+        input = inputs[-1]
+        pred = torch.where(torch.sigmoid(input) > 0.5, 1, 0)
+        evaluator.add_batch(gt_image=target.cpu().numpy(), pre_image=pred.cpu().numpy())
+        w_00,w_11 = evaluator.loss_weight()
+        weight1 = torch.zeros_like(target)
+        weight1 = torch.fill_(weight1, w_00)
+        weight1[target > 0] = w_11
+        loss = F.binary_cross_entropy_with_logits(input, target.float(),weight=weight1,reduction="mean")
+
+        return loss
+    
 class AERNet(nn.Module):
     def __init__(self, in_channels=3, num_classes=1, freeze_bn=False):
         super(AERNet, self).__init__()
@@ -29,39 +47,17 @@ class AERNet(nn.Module):
                 m.eval()
     
     @staticmethod
-    def loss(input, target):
-        # evaluator = SegEvaluator(1)
-        # evaluator.reset()
-        target = torch.argmax(target, 1, keepdim=True).float()
-        
-        pred = torch.where(torch.sigmoid(input[-1]) > 0.5, 1, 0)
-        # evaluator.add_batch(gt_image=target.cpu().numpy(), pre_image=pred.cpu().numpy())
-        evaluator = SegEvaluator(mask=pred.cpu().numpy(), gt=target.cpu().numpy())
-        w_00,w_11 = evaluator.loss_weight()
-        weight1 = torch.zeros_like(target)
-        weight1 = torch.fill_(weight1, w_00)
-        weight1[target > 0] = w_11
-        # print(target)
-        loss = F.binary_cross_entropy_with_logits(input[-1], target,weight=weight1,reduction="mean")
-
+    def loss(inputs, target):
+        input = inputs[-1]
+        loss = nn.BCEWithLogitsLoss()(input, target.float())
         return loss
 
     @staticmethod
-    def predict(pred):
-        pred = torch.where(torch.sigmoid(pred[-1]) > 0.5, 1, 0)
+    def predict(preds):
+        pred = preds[-1]
+        pred = torch.where(torch.sigmoid(pred) > 0.5, 1, 0)
         return pred
 
-class SegEvaluator():
-    def __init__(self, mask, gt):
-        self.tp = np.sum(np.logical_and(mask == 1, gt == 1))
-        self.fp = np.sum(np.logical_and(mask == 1, gt != 1))
-        self.tn = np.sum(np.logical_and(mask != 1, gt != 1))
-        self.fn = np.sum(np.logical_and(mask != 1, gt == 1))
-    
-    def loss_weight(self):
-        w1 = self.tn / (self.tn + self.fn + self.fp)
-        w2 = self.tp / (self.tp + self.fp + self.fn)
-        return w1, w2
         
         
 

@@ -82,6 +82,7 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
             
             pred = model(image1, image2)
             
+            label = torch.argmax(label, dim=1, keepdim=True)
             if hasattr(model, "loss"):
                 reduced_loss = model.loss(pred, label)
             else:
@@ -104,8 +105,8 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
         args.logger.info("[TRAIN] iter:{}/{}, learning rate:{:.6}, loss:{:.6}".format(epoch+1, args.iters, optimizer.param_groups[0]['lr'], loss_tm))
         miou_eval = evaluation(model,dataloader_eval,args)
 
-        if (epoch+1) % 10 ==0:
-             torch.save(model.state_dict(), os.path.join(args.save_dir, "iter_{}.pth".format(epoch+1)))
+        # if (epoch+1) % 10 ==0:
+        #      torch.save(model.state_dict(), os.path.join(args.save_dir, "iter_{}.pth".format(epoch+1)))
         
 
         if miou_eval > max(0.5, max_miou):

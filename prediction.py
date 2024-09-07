@@ -52,6 +52,8 @@ from common import Args
 # dataset_name = "CLCD"
 # dataset_name = "SYSCD_d"
 dataset_name = "MacaoCD"
+dataset_name = "WHU_BCD"
+
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 
 
@@ -60,7 +62,7 @@ if __name__ == "__main__":
     # 代码运行预处理
     torch.cuda.empty_cache()
     torch.cuda.init()
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -77,11 +79,11 @@ if __name__ == "__main__":
     # model = HRNet(num_classes)
     # model = FCN32s(num_classes, aux=True, pretrained_base=False)
     # model = CDNet(img_size=512)
-    model = BiSRNet()
+    # model = BiSRNet()
     # model = USSFCNet(in_ch=3).cuda()
     # model = DTCDSCNet()
     # model = SUNnet(4,out_size=[512,512]).cuda()
-    # model = DMINet()
+    model = DMINet()
     # model = UChange()
     # model = DSAMNet(2).cuda()
     # model = BIT_CD().cuda()
@@ -89,9 +91,9 @@ if __name__ == "__main__":
     # model = SUNnet()
     # model = DSIFN()
 
-    test_data = TestReader(dataset_path, mode="val",en_edge=False)
+    test_data = TestReader(dataset_path, mode="test",en_edge=False)
     
-    weight_path = r"/home/jq/Code/torch/output/macaocd/BiSRNet_2024_05_06_23/BiSRNet_best.pth"
+    weight_path = r"/home/jq/Code/torch/output/whu_bcd/DMINet_2024_06_29_23/DMINet_best.pth"
     predict(model, test_data, weight_path,test_data.data_name,2,1)
     # x = torch.rand([1,3,256,256]).cuda()
     # y = model(x,x)

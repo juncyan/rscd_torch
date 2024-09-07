@@ -98,8 +98,8 @@ class Metrics(object):
 
     # def add_batch(self, gt_image, pre_image):
     def add_batch(self, pred, lab):
-        pred = np.array(pred)
-        lab = np.array(lab)
+        pred = np.array(pred,dtype=np.int16)
+        lab = np.array(lab,dtype=np.int16)
         # print(pred.shape, lab.shape)
         if len(lab.shape) == 4 and lab.shape[1] != 1:
             lab = np.argmax(lab, axis=1)

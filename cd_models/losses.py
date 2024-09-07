@@ -109,3 +109,23 @@ def hybrid_lossHCX(predictions, target):
         focal_new=focal *((bce/focal).detach())
         total_loss = dice + focal_new
     return total_loss
+
+
+def dice_loss(logits,targets,smooth=1e-5):
+    # logic.shape=[C,N,H,W],target.shape=[C,N,H,W]&[C,1,H,W]
+    if logits.shape == targets.shape:
+        targets = targets.type(torch.float32)
+    elif targets.shape[1] == 1:
+        targets = targets.type(torch.int64)
+        targets = torch.zeros_like(logits).scatter_(dim=1, index=targets, src=torch.tensor(1.0)).type(torch.float32)
+
+    else:
+        assert "pred.shape not match label.shape"
+
+    outputs = torch.nn.functional.softmax(logits,dim=1).type(torch.float32)
+    #outputs = logits
+    #targets=torch.zeros_like(logits).scatter_(dim=1,index=targets,src=torch(1.0))
+
+    inter = outputs*targets
+    dice = 1 - ((2 * inter.sum(dim=(2, 3)) + smooth) / (outputs.sum(dim=(2, 3)) + targets.sum(dim=(2, 3)) + smooth))
+    return dice.mean().item()
