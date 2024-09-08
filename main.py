@@ -30,6 +30,7 @@ from cd_models.rdpnet import RDPNet
 from cd_models.bisrnet import BiSRNet
 from cd_models.hanet import HAN
 from cd_models.cgnet import CGNet
+from cd_models.mambacd import build_STMambaBCD
 
 from core.work import Work
 
@@ -66,6 +67,14 @@ def parse_args():
                         help='w-decay (default: 5e-4)')
     parser.add_argument('--num_workers', type=int, default=8,
                         help='num_workers (default: 8)')
+    parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_base_224.yaml',
+                        help='train mamba')
+    parser.add_argument(
+        "--opts",
+        help="Modify config options by adding 'KEY VALUE' pairs. ",
+        default=None,
+        nargs='+',
+    )
     args = parser.parse_args()
     return args
 
@@ -74,7 +83,7 @@ if __name__ == "__main__":
     # 代码运行预处理
     print("main")
     args = parse_args()
-    model = AERNet()
+    model = build_STMambaBCD(args)
     w = Work(model, args,'./output')
     w()
     
