@@ -107,8 +107,8 @@ class Metrics(object):
         if len(pred.shape) == 4 and pred.shape[1] != 1:
             pred = np.argmax(pred, axis=1)
 
-        gt_image = np.squeeze(lab)
-        pre_image = np.squeeze(pred)
+        gt_image = np.array(np.squeeze(lab),dtype=np.uint8)
+        pre_image = np.array(np.squeeze(pred),dtype=np.uint8)
         
         assert (np.max(pre_image) <= self.__num_class)
         # assert (len(gt_image) == len(pre_image))

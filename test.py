@@ -8,7 +8,6 @@ import random
 import os
 
 # 基础功能
-from dataset.CDReader import CDReader, TestReader
 from work.train import train
 from cd_models.aernet import AERNet
 

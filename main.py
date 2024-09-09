@@ -49,7 +49,7 @@ def parse_args():
     parser.add_argument('--device', type=int, default=0,
                         choices=[0, 1],
                         help='device (default: gpu:0)')
-    parser.add_argument('--dataset', type=str, default="CLCD",
+    parser.add_argument('--dataset', type=str, default="MacaoCD",
                         help='dataset name (default: LEVIR_CD)')
     parser.add_argument('--iters', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 100)')
@@ -83,7 +83,8 @@ if __name__ == "__main__":
     # 代码运行预处理
     print("main")
     args = parse_args()
-    model = build_STMambaBCD(args)
+    # model = build_STMambaBCD(args)
+    model = CGNet()
     w = Work(model, args,'./output')
     w()
     

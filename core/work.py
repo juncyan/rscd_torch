@@ -45,7 +45,7 @@ class Work():
         self.test_loader = DataLoader(dataset=test_data, batch_size=self.args.batch_size, num_workers=self.args.num_workers,
                                     shuffle=True, drop_last=True)
         
-    def loss(logits, labels):
+    def loss(self, logits, labels):
         if logits.shape == labels.shape:
             labels = torch.argmax(labels,dim=1)
         elif len(labels.shape) == 3:
@@ -53,7 +53,7 @@ class Work():
         else:
             assert "pred.shape not match label.shape"
         #logits = F.softmax(logits,dim=1)
-        return torch.nn.CrossEntropyLoss(dim=1)(logits,labels)
+        return torch.nn.CrossEntropyLoss()(logits,labels)
         
     
     def _seed_init(self, seed=32767):

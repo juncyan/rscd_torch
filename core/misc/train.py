@@ -52,13 +52,13 @@ def train(obj):
             
             pred = model(image1, image2)
             
-            label = torch.argmax(label, dim=1, keepdim=True)
+            # label = torch.argmax(label, dim=1, keepdim=True)
             if hasattr(model, "loss"):
                 reduced_loss = model.loss(pred, label)
             else:
                 if (type(pred) == tuple) or (type(pred) == list):
-                    pred = pred[0]
-                reduced_loss = dice_loss(pred, label)
+                    pred = pred[1]
+                reduced_loss = obj.loss(pred, label)
 
             optimizer.zero_grad()  # 梯度清零
             reduced_loss.backward()  # 计算梯度
