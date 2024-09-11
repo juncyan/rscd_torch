@@ -5,6 +5,7 @@ from .backbone import build_backbone
 from .modules import TransformerDecoder, Transformer
 from einops import rearrange
 
+from ..loss.losses import cross_entropy
 
 class token_encoder(nn.Module):
     def __init__(self, in_chan = 32, token_len = 4, heads = 8):
@@ -132,3 +133,18 @@ class MSCANet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.BatchNorm2d):
                 m.eval()
+    
+    @staticmethod
+    def predict(pred):
+        return pred[0]
+    
+    @staticmethod
+    def loss(pred, labels):
+        result1, result2, result3 = pred
+        if labels.shape[1] > 1 and len(labels.shape) == 4:
+            label = torch.argmax(labels, 1).unsqueeze(1).float()
+        else:
+            label = labels
+        CDcriterionCD = cross_entropy().to('cuda:1', dtype=torch.float)
+        CD_loss = CDcriterionCD(result1, label) +CDcriterionCD(result2, label)+CDcriterionCD(result3, label)
+        return CD_loss

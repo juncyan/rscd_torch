@@ -49,6 +49,8 @@ class AERNet(nn.Module):
     @staticmethod
     def loss(inputs, target):
         input = inputs[-1]
+        if target.shape != input.shape:
+            target = torch.argmax(target,1,True)
         loss = nn.BCEWithLogitsLoss()(input, target.float())
         return loss
 

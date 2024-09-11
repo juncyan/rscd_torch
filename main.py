@@ -30,6 +30,7 @@ from cd_models.rdpnet import RDPNet
 from cd_models.bisrnet import BiSRNet
 from cd_models.hanet import HAN
 from cd_models.cgnet import CGNet
+from cd_models.rsmamba import RSMamba_CD
 from cd_models.mambacd import build_STMambaBCD
 
 from core.work import Work
@@ -84,7 +85,7 @@ if __name__ == "__main__":
     print("main")
     args = parse_args()
     # model = build_STMambaBCD(args)
-    model = CGNet()
+    model = AERNet()
     w = Work(model, args,'./output')
     w()
     

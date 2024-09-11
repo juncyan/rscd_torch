@@ -290,15 +290,18 @@ class CGNet(nn.Module):
     @staticmethod
     def predict(preds):
         pred = preds[1]
+        pred = F.sigmoid(pred)
         pred[pred >= 0.5] = 1
         pred[pred < 0.5] = 0
         return pred
     
     @staticmethod
     def loss(preds, label):
-        if len(label.shape) == 4 and label.shape[1] > 1:
-            label = torch.argmax(label, 1, keepdim=True) .float()
-        ls = torch.nn.CrossEntropyLoss()(preds[0], label) + torch.nn.CrossEntropyLoss()(preds[1], label)
+        if label.shape[1] > 1 and len(label.shape) == 4:
+            label = torch.argmax(label, 1, True)
+            label = label.float()
+        
+        ls = nn.CrossEntropyLoss()(preds[0], label)  + nn.CrossEntropyLoss()(preds[1], label)
         return ls
 
 

@@ -46,6 +46,9 @@ class Work():
                                     shuffle=True, drop_last=True)
         
     def loss(self, logits, labels):
+        # return nn.BCEWithLogitsLoss()(logits, lab)
+        if len(labels.shape) == 4:
+            labels = torch.argmax(labels, 1)
         if logits.shape == labels.shape:
             labels = torch.argmax(labels,dim=1)
         elif len(labels.shape) == 3:
