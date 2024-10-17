@@ -27,13 +27,13 @@ from cd_models.dsifn import DSIFN
 from cd_models.bit_cd import BIT_CD
 from cd_models.transunet import TransUNet
 from cd_models.rdpnet import RDPNet
-from cd_models.bisrnet import BiSRNet
+from cd_models.bisrnet import BiSRNet, SSCDl
 from cd_models.hanet import HAN
 from cd_models.cgnet import CGNet
 from cd_models.rsmamba import RSMamba_CD
 from cd_models.mambacd import build_STMambaBCD
 
-from core.work import Work
+from core.scdwork import Work
 
 # dataset_name = "GVLM_CD"
 # dataset_name = "LEVIR_CD"
@@ -56,8 +56,8 @@ def parse_args():
                         help='number of epochs to train (default: 100)')
     parser.add_argument('--en_load_edge', type=bool, default=False,
                         help='en_load_edge False')
-    parser.add_argument('--num_classes', type=int, default=2,
-                        help='num classes (default: 2)')
+    parser.add_argument('--num_classes', type=int, default=7,
+                        help='num classes (default: 7)')
     parser.add_argument('--batch_size', type=int, default=4,
                         help='batch_size (default: 4)')
     parser.add_argument('--lr', type=float, default=1e-4, metavar='LR',
@@ -85,8 +85,9 @@ if __name__ == "__main__":
     print("main")
     args = parse_args()
     # model = build_STMambaBCD(args)
-    model = AERNet()
+    model = SSCDl(in_channels=3, num_classes=args.num_classes)
     w = Work(model, args,'./output')
     w()
+    
     
     

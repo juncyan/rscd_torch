@@ -7,9 +7,9 @@ from torch.utils.data import DataLoader
 import numpy as np
 import datetime
 
-from .datasets import CDReader, TestReader
+from .datasets import SCDReader, TestSCDReader
 from .cdmsic import load_logger
-from .cdmsic import train
+from .scdmisc.train import train
 
 
 class Work():
@@ -24,15 +24,13 @@ class Work():
         os.environ['CUDA_VISIBLE_DEVICES'] = "{}".format(self.args.device)
         self.device = torch.device(self.args.device)
         self.model = model.to(self.device, dtype=torch.float)
-
-        self._seed_init()
         self.logger()
         self.dataload()
 
     def dataload(self, datasetlist=['train', 'val', 'test']):
-        train_data = CDReader(self.dataset_path, datasetlist[0], self.args.en_load_edge)
-        val_data = CDReader(self.dataset_path, datasetlist[2], self.args.en_load_edge)
-        test_data = TestReader(self.dataset_path, datasetlist[2], self.args.en_load_edge)
+        train_data = SCDReader(self.dataset_path, datasetlist[0])
+        val_data = SCDReader(self.dataset_path, datasetlist[2])
+        test_data = TestSCDReader(self.dataset_path, datasetlist[2])
 
         self.traindata_num = train_data.__len__()
         self.val_num = val_data.__len__()
@@ -45,20 +43,6 @@ class Work():
         self.test_loader = DataLoader(dataset=test_data, batch_size=self.args.batch_size, num_workers=self.args.num_workers,
                                     shuffle=True, drop_last=True)
         
-    def loss(self, logits, labels):
-        # return nn.BCEWithLogitsLoss()(logits, lab)
-        if len(labels.shape) == 4:
-            labels = torch.argmax(labels, 1)
-        if logits.shape == labels.shape:
-            labels = torch.argmax(labels,dim=1)
-        elif len(labels.shape) == 3:
-            labels = labels
-        else:
-            assert "pred.shape not match label.shape"
-        #logits = F.softmax(logits,dim=1)
-        return torch.nn.CrossEntropyLoss()(logits,labels)
-        
-    
     def _seed_init(self, seed=32767):
         random.seed(seed)
         os.environ['PYTHONHASHSEED'] = str(seed)
@@ -85,5 +69,6 @@ class Work():
 
     def __call__(self):
         train(self)
+
 
             

@@ -157,7 +157,7 @@ class BiSRNet(nn.Module):
     def __init__(self, in_channels=3, num_classes=2):
         super(BiSRNet, self).__init__()        
         # self.FCN = FCN(in_channels, pretrained=True)
-        self.Unetplusplus = NestedUNet(True, 3, 512)
+        self.Unetplusplus = NestedUNet(True, in_channels, 512)
         self.SiamSR = SR(128)
         # self.CotSR = CotSR(128)
         self.head = nn.Sequential(nn.Conv2d(512, 128, kernel_size=1, stride=1, padding=0, bias=False),

@@ -58,14 +58,15 @@ class DSAMNet(nn.Module):
     @staticmethod
     def loss(pred, label, wdice=0.2):
         prob, ds2, ds3 = pred
+        device = prob.device
         # print(prob.shape, ds2.shape, ds3.shape, label.shape)
         
-        dsloss2 = DiceLoss().to('cuda', dtype=torch.float)(ds2, label)
-        dsloss3 = DiceLoss().to('cuda', dtype=torch.float)(ds3, label)
+        dsloss2 = DiceLoss().to(device=device, dtype=torch.float)(ds2, label)
+        dsloss3 = DiceLoss().to(device=device, dtype=torch.float)(ds3, label)
         Dice_loss = 0.5*(dsloss2+dsloss3)
         
         label = torch.argmax(label, 1).unsqueeze(1).float()
-        CT_loss = BCL().to('cuda', dtype=torch.float)(prob, label)
+        CT_loss = BCL().to(device=device, dtype=torch.float)(prob, label)
         CD_loss = CT_loss + wdice * Dice_loss
         return CD_loss
     

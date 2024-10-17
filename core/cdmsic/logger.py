@@ -42,7 +42,7 @@ def load_logger(save_log_dir,save=True,print=True,config=None):
     if print:
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(level=logging.INFO)
-        formatter = logging.Formatter(datefmt='%Y/%m/%d %H:%M:%S',
+        formatter = logging.Formatter(datefmt='%Y/%m/%d %H:%M:%s',
                                       fmt='[ %(asctime)s ] %(message)s')
         stream_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)

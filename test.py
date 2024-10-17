@@ -5,20 +5,34 @@ import numpy as np
 import datetime
 import platform
 import random
+from skimage import io
 import os
 
-# 基础功能
-from work.train import train
-from cd_models.aernet import AERNet
+num_classes = 7
+ST_COLORMAP = [[255,255,255], [0,0,255], [128,128,128], [0,128,0], [0,255,0], [128,0,0], [255,0,0]]
+ST_CLASSES = ['unchanged', 'water', 'ground', 'low vegetation', 'tree', 'building', 'sports field']
 
-# 模型导入
-test_data1 = torch.rand(2,3,256,256).cuda()
-test_data2 = torch.rand(2,3,256,256).cuda()
-test_label = torch.randint(0, 2, (2,1,256,256)).cuda()
+MEAN_A = np.array([113.40, 114.08, 116.45])
+STD_A  = np.array([48.30,  46.27,  48.14])
+MEAN_B = np.array([111.07, 114.04, 118.18])
+STD_B  = np.array([49.41,  47.01,  47.94])
 
-model = AERNet()
-model = model.cuda()
-output = model(test_data1,test_data2)
-p = model.predict(output)
-ls = model.loss(output, test_label)
-print(ls)
+def one_hot_it(label, label_info):
+    semantic_map = []
+    for info in label_info:
+        color = info#label_info[info].values
+        equality = np.equal(label, color)
+        class_map = np.all(equality, axis=-1)
+        semantic_map.append(class_map)
+    # print(semantic_map)
+    return np.stack(semantic_map, axis=-1)
+
+img_pth = r"/mnt/data/Datasets/Second/train/label1"
+
+fs = os.listdir(img_pth)
+for f in fs:
+    ip = os.path.join(img_pth, f)
+    img = io.imread(ip)
+    x = one_hot_it(img, ST_COLORMAP)
+    x = np.argmax(x, -1)
+    print(x.max(), x.min())
