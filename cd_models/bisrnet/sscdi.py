@@ -90,7 +90,7 @@ class SSCDl(nn.Module):
         self.classifier2 = nn.Conv2d(128, num_classes, kernel_size=1)
         
         self.resCD = self._make_layer(ResBlock, 256, 128, 6, stride=1)
-        self.classifierCD = nn.Sequential(nn.Conv2d(128, 64, kernel_size=1), nn.BatchNorm2d(64), nn.ReLU(), nn.Conv2d(64, 1, kernel_size=1))
+        self.classifierCD = nn.Sequential(nn.Conv2d(128, 64, kernel_size=1), nn.BatchNorm2d(64), nn.ReLU(), nn.Conv2d(64, 2, kernel_size=1), nn.Sigmoid())
             
         initialize_weights(self.classifier1, self.classifier2, self.resCD, self.classifierCD)
     

@@ -10,6 +10,7 @@ import os
 from .val import evaluation
 # from .predict import test
 from torch.optim.lr_scheduler import StepLR
+from .loss import loss
 
 
 def train(obj):
@@ -18,15 +19,11 @@ def train(obj):
     model = obj.model
     
     # optimizer = optim.Adam(model.parameters(),lr= obj.args.lr, betas=(0.9, 0.999))
-    # optimizer = optim.AdamW(model.parameters(), lr=obj.args.lr, weight_decay=5e-4)
-    # max_itr = obj.args.iters * obj.traindata_num
-    # lr_step = StepLR(optimizer, step_size=max_itr, gamma=0.5)
+    optimizer = optim.AdamW(model.parameters(), lr=obj.args.lr, weight_decay=5e-4)
+    max_itr = obj.args.iters * obj.traindata_num
+    lr_step = StepLR(optimizer, step_size=max_itr, gamma=0.5)
     
-
-    optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=obj.args.lr, weight_decay=5e-4, momentum=0.9, nesterov=True)
-    lr_step = StepLR(optimizer, 1, gamma=0.95, last_epoch=-1)
-
-    max_miou = 0.
+    max_sek = 0.
     best_iter = 0
     #early_stopping = Early_stopping(eps=2e-5,llen=10)
     #criterion = SegmentationLosses(weight=None,cuda=True).build_loss("ce")
@@ -36,21 +33,24 @@ def train(obj):
         model.train()
         loss_record = []
 
-        for _,(image1, image2, label1, label2) in enumerate(obj.train_loader):
+        for _,(image1, image2, label1, label2, label, _) in enumerate(obj.train_loader):
 
             image1 = image1.cuda(obj.device)
             image2 = image2.cuda(obj.device)
             # labels_bn = (label1>0).unsqueeze(1).cuda().float()
             label1 = label1.cuda(obj.device)
             label2 = label2.cuda(obj.device)
+            label = label.cuda(obj.device)
+
+            # print(image1.shape, image2.shape, label.shape, label2.shape, label.shape)
             
             out_change, outputs_A, outputs_B = model(image1, image2)
             
-            if hasattr(model, "loss"):
-                reduced_loss = model.loss(out_change, outputs_A, outputs_B, label1, label2, obj.device)
+            optimizer.zero_grad()  
+
+            reduced_loss = loss(out_change, outputs_A, outputs_B, label1, label2, label)
             
-            optimizer.zero_grad()  # 梯度清零
-            reduced_loss.backward()  # 计算梯度
+            reduced_loss.backward() 
             optimizer.step()
             lr_step.step()
 
@@ -59,13 +59,13 @@ def train(obj):
         loss_tm = np.mean(loss_record)
 
         obj.logger.info("[TRAIN] iter:{}/{}, learning rate:{:.6}, loss:{:.6}".format(epoch+1, obj.args.iters, optimizer.param_groups[0]['lr'], loss_tm))
-        miou_eval = evaluation(obj)
+        sek = evaluation(obj)
         
-        if miou_eval > max(0.5, max_miou):
+        if sek > max(0.5, max_sek):
             torch.save(model.state_dict(), obj.best_model_path)
-            max_miou = miou_eval
+            max_sek = sek
             best_iter = epoch+1
-        obj.logger.info("[TRAIN] train time is {:.2f}, best iter {}, max mIoU {:.4f}".format((datetime.datetime.now() - now).total_seconds(), best_iter, max_miou))
+        obj.logger.info("[TRAIN] train time is {:.2f}, best iter {}, max mIoU {:.4f}".format((datetime.datetime.now() - now).total_seconds(), best_iter, max_sek))
  
     # test(obj)
  

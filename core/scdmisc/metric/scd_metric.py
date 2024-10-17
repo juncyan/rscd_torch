@@ -232,7 +232,7 @@ def SCDD_eval_all(preds, labels, num_class):
     SC_Precision = SC_TP/change_pred_sum
     SC_Recall = SC_TP/change_label_sum
     Fscd = stats.hmean([SC_Precision, SC_Recall])
-    return Fscd, IoU_mean, Sek
+    return kappa_n0, Fscd, IoU_mean, Sek
 
 def SCDD_eval(pred, label, num_class):
     infer_array = np.array(pred)
