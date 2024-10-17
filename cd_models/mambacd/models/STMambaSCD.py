@@ -22,9 +22,10 @@ from timm.models.layers import DropPath, trunc_normal_
 from fvcore.nn import FlopCountAnalysis, flop_count_str, flop_count, parameter_count
 from .ChangeDecoder import ChangeDecoder
 from .SemanticDecoder import SemanticDecoder
+from ..configs.config import get_config
 
 class STMambaSCD(nn.Module):
-    def __init__(self, output_cd, output_clf, pretrained,  **kwargs):
+    def __init__(self, num_classes, pretrained,  **kwargs):
         super(STMambaSCD, self).__init__()
         self.encoder = Backbone_VSSM(out_indices=(0, 1, 2, 3), pretrained=pretrained, **kwargs)
         
@@ -80,8 +81,8 @@ class STMambaSCD(nn.Module):
         )
 
 
-        self.main_clf_cd = nn.Conv2d(in_channels=128, out_channels=output_cd, kernel_size=1)
-        self.aux_clf = nn.Conv2d(in_channels=128, out_channels=output_clf, kernel_size=1)
+        self.main_clf_cd = nn.Conv2d(in_channels=128, out_channels=2, kernel_size=1)
+        self.aux_clf = nn.Conv2d(in_channels=128, out_channels=num_classes, kernel_size=1)
 
 
     def forward(self, pre_data, post_data):
@@ -105,3 +106,40 @@ class STMambaSCD(nn.Module):
         output_T2 = F.interpolate(output_T2, size=post_data.size()[-2:], mode='bilinear')
 
         return output_bcd, output_T1, output_T2
+
+
+def build_STMambaSCD(args):
+    config = get_config(args)
+    model = STMambaSCD(
+            pretrained="/home/jq/Code/weights/vssm_base_0229_ckpt_epoch_237.pth",
+            patch_size=config.MODEL.VSSM.PATCH_SIZE, 
+            in_chans=config.MODEL.VSSM.IN_CHANS, 
+            num_classes=config.MODEL.NUM_CLASSES, 
+            depths=config.MODEL.VSSM.DEPTHS, 
+            dims=config.MODEL.VSSM.EMBED_DIM, 
+            # ===================
+            ssm_d_state=config.MODEL.VSSM.SSM_D_STATE,
+            ssm_ratio=config.MODEL.VSSM.SSM_RATIO,
+            ssm_rank_ratio=config.MODEL.VSSM.SSM_RANK_RATIO,
+            ssm_dt_rank=("auto" if config.MODEL.VSSM.SSM_DT_RANK == "auto" else int(config.MODEL.VSSM.SSM_DT_RANK)),
+            ssm_act_layer=config.MODEL.VSSM.SSM_ACT_LAYER,
+            ssm_conv=config.MODEL.VSSM.SSM_CONV,
+            ssm_conv_bias=config.MODEL.VSSM.SSM_CONV_BIAS,
+            ssm_drop_rate=config.MODEL.VSSM.SSM_DROP_RATE,
+            ssm_init=config.MODEL.VSSM.SSM_INIT,
+            forward_type=config.MODEL.VSSM.SSM_FORWARDTYPE,
+            # ===================
+            mlp_ratio=config.MODEL.VSSM.MLP_RATIO,
+            mlp_act_layer=config.MODEL.VSSM.MLP_ACT_LAYER,
+            mlp_drop_rate=config.MODEL.VSSM.MLP_DROP_RATE,
+            # ===================
+            drop_path_rate=config.MODEL.DROP_PATH_RATE,
+            patch_norm=config.MODEL.VSSM.PATCH_NORM,
+            norm_layer=config.MODEL.VSSM.NORM_LAYER,
+            downsample_version=config.MODEL.VSSM.DOWNSAMPLE,
+            patchembed_version=config.MODEL.VSSM.PATCHEMBED,
+            gmlp=config.MODEL.VSSM.GMLP,
+            use_checkpoint=config.TRAIN.USE_CHECKPOINT,
+            ) 
+    return model
+

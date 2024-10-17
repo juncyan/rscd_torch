@@ -31,7 +31,7 @@ from cd_models.bisrnet import BiSRNet, SSCDl
 from cd_models.hanet import HAN
 from cd_models.cgnet import CGNet
 from cd_models.rsmamba import RSMamba_CD
-from cd_models.mambacd import build_STMambaBCD
+from cd_models.mambacd import build_STMambaSCD
 
 from core.scdwork import Work
 
@@ -84,8 +84,8 @@ if __name__ == "__main__":
     # 代码运行预处理
     print("main")
     args = parse_args()
-    # model = build_STMambaBCD(args)
-    model = SSCDl(in_channels=3, num_classes=args.num_classes)
+    model = build_STMambaSCD(args)
+    # model = SSCDl(in_channels=3, num_classes=args.num_classes)
     w = Work(model, args,'./output')
     w()
     

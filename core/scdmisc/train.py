@@ -61,11 +61,11 @@ def train(obj):
         obj.logger.info("[TRAIN] iter:{}/{}, learning rate:{:.6}, loss:{:.6}".format(epoch+1, obj.args.iters, optimizer.param_groups[0]['lr'], loss_tm))
         sek = evaluation(obj)
         
-        if sek > max(0.5, max_sek):
+        if sek > max_sek:
             torch.save(model.state_dict(), obj.best_model_path)
             max_sek = sek
             best_iter = epoch+1
-        obj.logger.info("[TRAIN] train time is {:.2f}, best iter {}, max mIoU {:.4f}".format((datetime.datetime.now() - now).total_seconds(), best_iter, max_sek))
+        obj.logger.info("[TRAIN] train time is {:.2f}, best iter {}, max sek {:.4f}".format((datetime.datetime.now() - now).total_seconds(), best_iter, max_sek))
  
     # test(obj)
  

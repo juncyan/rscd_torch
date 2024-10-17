@@ -22,7 +22,7 @@ def evaluation(obj):
         model.eval()
         p_start = datetime.now()
 
-        for _,(image1, image2, label1, label2,label, _) in enumerate(obj.test_data):
+        for _,(image1, image2, label1, label2,label, _) in enumerate(obj.test_loader):
             image1 = image1.cuda(obj.device)
             image2 = image2.cuda(obj.device)
             labels_A = np.array(label1, dtype=np.int64)
@@ -32,7 +32,7 @@ def evaluation(obj):
 
             outputs_A = outputs_A.cpu().detach()
             outputs_B = outputs_B.cpu().detach()
-            change_mask =  torch.argmax(out_change, axis=1)
+            change_mask =  torch.argmax(out_change, axis=1).cpu().detach()
 
             preds_A = torch.argmax(outputs_A, dim=1)
             preds_B = torch.argmax(outputs_B, dim=1)
@@ -55,7 +55,7 @@ def evaluation(obj):
         metrics = {"Sek":Sek,"Acc":Acc,"MIoU":MIoU,"Kappa":kappa_n0,"Fscd":Fscd}
 
     if obj.logger != None:
-        obj.logger.info("[EVAL] evalution {} images, time: {}".format(obj.val_num, datetime.now() - p_start))
+        obj.logger.info("[EVAL] evalution {} images, time: {}".format(obj.test_num, datetime.now() - p_start))
         obj.logger.info("[METRICS] Sek:{:.4},Acc:{:.4},MIoU:{:.4},Kappa:{:.4},Fscd:{:.4}".format(Sek,Acc,MIoU,kappa_n0,Fscd))
         
     d = pd.DataFrame([metrics])
