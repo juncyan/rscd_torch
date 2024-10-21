@@ -111,7 +111,7 @@ class STMambaSCD(nn.Module):
 def build_STMambaSCD(args):
     config = get_config(args)
     model = STMambaSCD(
-            pretrained="/home/jq/Code/weights/vssm_base_0229_ckpt_epoch_237.pth",
+            pretrained="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth",
             patch_size=config.MODEL.VSSM.PATCH_SIZE, 
             in_chans=config.MODEL.VSSM.IN_CHANS, 
             num_classes=config.MODEL.NUM_CLASSES, 

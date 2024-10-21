@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from models.block.Base import Conv3Relu
+from ..block.Base import Conv3Relu
 import torch
 from torch.nn import functional as F
 

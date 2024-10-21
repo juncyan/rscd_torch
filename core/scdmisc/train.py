@@ -10,7 +10,7 @@ import os
 from .val import evaluation
 # from .predict import test
 from torch.optim.lr_scheduler import StepLR
-from .loss import loss
+from .loss import loss, loss_lovasz
 
 
 def train(obj):
@@ -23,7 +23,7 @@ def train(obj):
     max_itr = obj.args.iters * obj.traindata_num
     lr_step = StepLR(optimizer, step_size=max_itr, gamma=0.5)
     
-    max_sek = 0.
+    max_miou = 0.
     best_iter = 0
     #early_stopping = Early_stopping(eps=2e-5,llen=10)
     #criterion = SegmentationLosses(weight=None,cuda=True).build_loss("ce")
@@ -48,7 +48,7 @@ def train(obj):
             
             optimizer.zero_grad()  
 
-            reduced_loss = loss(out_change, outputs_A, outputs_B, label1, label2, label)
+            reduced_loss = loss_lovasz(out_change, outputs_A, outputs_B, label1, label2, label)
             
             reduced_loss.backward() 
             optimizer.step()
@@ -59,13 +59,13 @@ def train(obj):
         loss_tm = np.mean(loss_record)
 
         obj.logger.info("[TRAIN] iter:{}/{}, learning rate:{:.6}, loss:{:.6}".format(epoch+1, obj.args.iters, optimizer.param_groups[0]['lr'], loss_tm))
-        sek = evaluation(obj)
+        miou = evaluation(obj)
         
-        if sek > max_sek:
+        if miou > max_miou:
             torch.save(model.state_dict(), obj.best_model_path)
-            max_sek = sek
+            max_miou = miou
             best_iter = epoch+1
-        obj.logger.info("[TRAIN] train time is {:.2f}, best iter {}, max sek {:.4f}".format((datetime.datetime.now() - now).total_seconds(), best_iter, max_sek))
+        obj.logger.info("[TRAIN] train time is {:.2f}, best iter {}, max MIoU {:.4f}".format((datetime.datetime.now() - now).total_seconds(), best_iter, max_miou))
  
     # test(obj)
  

@@ -32,6 +32,7 @@ from cd_models.hanet import HAN
 from cd_models.cgnet import CGNet
 from cd_models.rsmamba import RSMamba_CD
 from cd_models.mambacd import build_STMambaSCD
+from cd_models.scd_sam import SCD_SAM
 
 from core.scdwork import Work
 
@@ -45,12 +46,12 @@ def parse_args():
     # model
     parser.add_argument('--model', type=str, default='fssh',
                         help='model name (default: msfgnet)')
-    parser.add_argument('--img_size', type=int, default=256,
+    parser.add_argument('--img_size', type=int, default=512,
                         help='input image size (default: 256)')
     parser.add_argument('--device', type=int, default=0,
                         choices=[0, 1],
                         help='device (default: gpu:0)')
-    parser.add_argument('--dataset', type=str, default="MacaoCD",
+    parser.add_argument('--dataset', type=str, default="Second",
                         help='dataset name (default: LEVIR_CD)')
     parser.add_argument('--iters', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 100)')
@@ -68,7 +69,7 @@ def parse_args():
                         help='w-decay (default: 5e-4)')
     parser.add_argument('--num_workers', type=int, default=8,
                         help='num_workers (default: 8)')
-    parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_base_224.yaml',
+    parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_tiny_224_0229flex.yaml',
                         help='train mamba')
     parser.add_argument(
         "--opts",
@@ -86,6 +87,7 @@ if __name__ == "__main__":
     args = parse_args()
     model = build_STMambaSCD(args)
     # model = SSCDl(in_channels=3, num_classes=args.num_classes)
+    # model = SCD_SAM(args.img_size, args.num_classes)
     w = Work(model, args,'./output')
     w()
     

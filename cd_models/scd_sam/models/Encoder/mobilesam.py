@@ -697,7 +697,7 @@ def build_sam_vit_t():
                 layer_lr_decay=0.8))
     
     model_dict = mobile_sam.state_dict()
-    sam_checkpoint = "./weights/mobile_sam.pt"
+    sam_checkpoint = "/home/jq/Code/weights/mobile_sam.pt"
     pretrained_dict = torch.load(sam_checkpoint)
 
     # 寻找网络中公共层，并保留预训练参数

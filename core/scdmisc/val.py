@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
 import numpy as np
-from work.utils import colour_code_segmentation
 import cv2
 from datetime import datetime
 import time
@@ -22,7 +21,7 @@ def evaluation(obj):
         model.eval()
         p_start = datetime.now()
 
-        for _,(image1, image2, label1, label2,label, _) in enumerate(obj.test_loader):
+        for _,(image1, image2, label1, label2,_, _) in enumerate(obj.test_loader):
             image1 = image1.cuda(obj.device)
             image2 = image2.cuda(obj.device)
             labels_A = np.array(label1, dtype=np.int64)
@@ -49,7 +48,7 @@ def evaluation(obj):
                 labels_all.append(label_B)
                 acc = (acc_A + acc_B)*0.5
                 acc_meter.update(acc)
-           
+        
         kappa_n0, Fscd, MIoU, Sek = SCDD_eval_all(preds_all, labels_all, obj.args.num_classes)
         Acc = acc_meter.avg
         metrics = {"Sek":Sek,"Acc":Acc,"MIoU":MIoU,"Kappa":kappa_n0,"Fscd":Fscd}
@@ -63,7 +62,7 @@ def evaluation(obj):
         d.to_csv(obj.metric_path,mode='a', index=False, header=False,float_format="%.4f")
     else:
         d.to_csv(obj.metric_path, index=False,float_format="%.4f")
-    return Sek
+    return MIoU
 
 
 if __name__=="__main__":

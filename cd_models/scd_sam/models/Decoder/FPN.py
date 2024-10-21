@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.block.Base import Conv3Relu
-from models.block.Drop import DropBlock
-from models.block.Field import PPM, ASPP, SPP
+from ..block.Base import Conv3Relu
+from ..block.Drop import DropBlock
+from ..block.Field import PPM, ASPP, SPP
 
 
 class FPNNeck(nn.Module):

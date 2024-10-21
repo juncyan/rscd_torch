@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from mmdet.registry import MODELS
-from models.Decoder.CARAFE import CARAFE
+from .CARAFE import CARAFE
 
 def BasicConv(filter_in, filter_out, kernel_size, stride=1, pad=None):
     if not pad:

@@ -8,7 +8,7 @@ import numpy as np
 import datetime
 
 from .datasets import SCDReader
-from .cdmsic import load_logger
+from .cdmisc import load_logger
 from .scdmisc.train import train
 
 

@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-from work.utils import colour_code_segmentation
 import cv2
 from datetime import datetime
 import os

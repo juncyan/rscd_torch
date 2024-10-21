@@ -14,10 +14,10 @@ from .models.head.FCN import FCNHead, CSD
 
 
 class SCD_SAM(nn.Module):
-    def __init__(self, opt):
+    def __init__(self, input_size=512, num_classes=7, pretrain=None):
         super().__init__()
-        self.inplanes = int(re.sub(r"\D", "", opt.backbone.split("_")[-1])) 
-        num_classes = opt.num_classes
+        self.inplanes = 96 
+        num_classes = num_classes
 
         self.SAM_Encoder = build_sam_vit_t()
         self.CNN_Encoder = moat_4(use_window=True, num_classes=10)
@@ -25,11 +25,11 @@ class SCD_SAM(nn.Module):
         self.Semantic_Decoder = AFPN(self.inplanes)
 
         self.CSD = CSD(in_dim=self.inplanes, num_classes=self.inplanes)  
-        self.head = FCNHead(self.inplanes, num_classes, 1)
+        self.head = FCNHead(self.inplanes, num_classes, 2)
 
-        if opt.pretrain.endswith(".pt"):
-            self._init_weight(opt.pretrain)   
-        self.check_channels = ChannelChecker(self.SAM_Encoder, self.inplanes, opt.input_size)
+        if not pretrain is None:
+            self._init_weight(pretrain)   
+        self.check_channels = ChannelChecker(self.SAM_Encoder, self.inplanes, input_size)
         self.fusion4 = DFI(self.inplanes*8, self.inplanes*8, 16, 16)
         self.conv4 = Conv1Relu(self.inplanes*16, self.inplanes*8)
 

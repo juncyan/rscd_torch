@@ -8,8 +8,8 @@ import numpy as np
 import datetime
 
 from .datasets import CDReader, TestReader
-from .cdmsic import load_logger
-from .cdmsic import train
+from .cdmisc import load_logger
+from .cdmisc import train
 
 
 class Work():

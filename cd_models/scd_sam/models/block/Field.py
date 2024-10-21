@@ -5,7 +5,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from models.block.Base import Conv3Relu
+from .Base import Conv3Relu
 
 
 class PPM(nn.Module):
