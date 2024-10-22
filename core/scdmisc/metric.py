@@ -2,8 +2,100 @@ import os
 import math
 import random
 import numpy as np
+import pandas as pd
 from scipy import stats
-from .eval_segm import frequency_weighted_IU
+
+
+class Metrics(object):
+    def __init__(self, num_class):
+        self.__num_class = num_class
+        self.__hist = np.zeros((self.__num_class,) * 2)
+    
+    def Get_Metric(self):
+        hist_fg = self.__hist[1:, 1:]
+
+        c2hist = np.zeros((2, 2))
+        c2hist[0][0] = self.__hist[0][0]
+        c2hist[0][1] = self.__hist.sum(1)[0] - self.__hist[0][0]
+        c2hist[1][0] = self.__hist.sum(0)[0] - self.__hist[0][0]
+        c2hist[1][1] = hist_fg.sum()
+        hist_n0 = self.__hist.copy()
+        hist_n0[0][0] = 0
+        kappa_n0 = self.cal_kappa(hist_n0)
+        iu = np.diag(c2hist) / (c2hist.sum(1) + c2hist.sum(0) - np.diag(c2hist))
+        IoU_fg = iu[1]
+        IoU_mean = (iu[0] + iu[1]) / 2
+        Sek = (kappa_n0 * math.exp(IoU_fg)) / math.e
+        
+        pixel_sum = self.__hist.sum()
+        change_pred_sum  = pixel_sum - self.__hist.sum(1)[0].sum()
+        change_label_sum = pixel_sum - self.__hist.sum(0)[0].sum()
+        change_ratio = change_label_sum/pixel_sum
+        SC_TP = np.diag(hist_fg).sum()
+        SC_Precision = SC_TP/change_pred_sum
+        SC_Recall = SC_TP/change_label_sum
+        Fscd = 2*(SC_Precision*SC_Recall) / (SC_Precision + SC_Recall)
+
+        metrics = {
+            'miou': IoU_mean,
+            'kappa': kappa_n0,
+            'f1': Fscd,
+            'sek': Sek,
+            'pa': change_ratio,
+            'prec': SC_Precision,
+            'recall': SC_Recall}
+           
+        return metrics
+    
+    def get_hist(self, save_path=None):
+        hist = pd.DataFrame(self.__hist)
+        if save_path is None:
+            return hist
+        hist.to_csv(save_path, index=False, header=False, float_format='%.4f')
+        return None
+    
+    def cal_kappa(self, hist):
+        if hist.sum() == 0:
+            po = 0
+            pe = 1
+            kappa = 0
+        else:
+            po = np.diag(hist).sum() / hist.sum()
+            pe = np.matmul(hist.sum(1), hist.sum(0).T) / hist.sum() ** 2
+            if pe == 1:
+                kappa = 0
+            else:
+                kappa = (po - pe) / (1 - pe)
+        return kappa
+
+    def __generate_matrix(self, gt_image, pre_image):
+        mask = (gt_image >= 0) & (gt_image < self.__num_class)
+        label = self.__num_class * gt_image[mask].astype('int') + pre_image[mask]
+        count = np.bincount(label, minlength=self.__num_class ** 2)
+        confusion_matrix = count.reshape(self.__num_class, self.__num_class)
+        return confusion_matrix
+
+    # def add_batch(self, gt_image, pre_image):
+    def add_batch(self, pred, lab):
+        pred = np.array(pred)
+        lab = np.array(lab)
+        if len(lab.shape) == 4 and lab.shape[1] != 1:
+            lab = np.argmax(lab, axis=1)
+
+        if len(pred.shape) == 4 and pred.shape[1] != 1:
+            pred = np.argmax(pred, axis=1)
+
+        gt_image = np.squeeze(lab)
+        pre_image = np.squeeze(pred)
+        
+        assert (np.max(pre_image) <= self.__num_class)
+        assert gt_image.shape == pre_image.shape
+        self.__hist += self.__generate_matrix(gt_image, pre_image)
+
+    def reset(self):
+        self.__hist = np.zeros((self.__num_class,) * 2)
+        
+
 
 def read_idtxt(path):
   id_list = []
@@ -265,15 +357,6 @@ def SCDD_eval(pred, label, num_class):
     Fscd = stats.hmean([SC_Precision, SC_Recall])
     return Fscd, IoU_mean, Sek
 
-def FWIoU(pred, label, bn_mode=False, ignore_zero=False):
-    if bn_mode:
-        pred = (pred>= 0.5)
-        label = (label>= 0.5)
-    elif ignore_zero:
-        pred = pred-1
-        label = label-1
-    FWIoU = frequency_weighted_IU(pred, label)
-    return FWIoU
 
 def binary_accuracy(pred, label):
     valid = (label < 2)

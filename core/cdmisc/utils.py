@@ -153,8 +153,6 @@ def compute_global_accuracy(pred, label):
 			count = count + 1.0
 	return float(count) / float(total)
 
-
-
 def params_counter(model):
     total_params = sum(p.numel() for p in model.parameters())
     print(f'{total_params:,} total parameters.')
@@ -183,6 +181,33 @@ class Early_stopping(object):
 
 	def reset(self):
 		self.ll = [0]
+
+class TimeAverager(object):
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self._cnt = 0
+        self._total_time = 0
+        self._total_samples = 0
+
+    def record(self, usetime, num_samples=None):
+        self._cnt += 1
+        self._total_time += usetime
+        if num_samples:
+            self._total_samples += num_samples
+
+    def get_average(self):
+        if self._cnt == 0:
+            return 0
+        return self._total_time / float(self._cnt)
+
+    def get_ips_average(self):
+        if not self._total_samples or self._cnt == 0:
+            return 0
+        return float(self._total_samples) / self._total_time
+
+
 
 
 if __name__ == "__main__":
