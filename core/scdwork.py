@@ -21,9 +21,14 @@ class Work():
         self.root = save_dir
         self.color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[0,0,128]])
 
-        os.environ['CUDA_VISIBLE_DEVICES'] = "{}".format(self.args.device)
-        self.device = torch.device(self.args.device)
-        self.model = model.to(self.device, dtype=torch.float)
+        if self.args.device >= 0:
+            os.environ['CUDA_VISIBLE_DEVICES'] = "{}".format(self.args.device)
+            self.device = torch.device(self.args.device)
+        else:
+            os.environ['CUDA_VISIBLE_DEVICES'] = "0,1"
+            model = nn.DataParallel(model)
+            self.device = torch.device('cuda')
+        self.model = model.to(self.device)
         self.logger()
         self.dataload()
 

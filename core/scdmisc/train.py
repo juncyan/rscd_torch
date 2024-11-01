@@ -5,12 +5,13 @@ import numpy as np
 import datetime
 from torch import optim
 import os
-
+from tqdm import tqdm
 #基础功能
 from .val import evaluation
-# from .predict import test
+from .predict import test
 from torch.optim.lr_scheduler import StepLR
 from .loss import loss, loss_lovasz
+from cd_models.scd_sam.util.loss import CrossEntropyLoss2d, weighted_BCE_logits, ChangeSimilarity
 
 
 def train(obj):
@@ -28,27 +29,33 @@ def train(obj):
     #early_stopping = Early_stopping(eps=2e-5,llen=10)
     #criterion = SegmentationLosses(weight=None,cuda=True).build_loss("ce")
 
+    seg_criterion = CrossEntropyLoss2d(ignore_index=0) 
+    criterion_sc = ChangeSimilarity().to(obj.device)
+
     for epoch in range(obj.args.iters):
         now = datetime.datetime.now()
         model.train()
         loss_record = []
 
-        for _,(image1, image2, label1, label2, label, _) in enumerate(obj.train_loader):
+        for image1, image2, label1, label2, label, _ in tqdm(obj.train_loader):
 
-            image1 = image1.cuda(obj.device)
-            image2 = image2.cuda(obj.device)
+            image1 = image1.to(obj.device)
+            image2 = image2.to(obj.device)
             # labels_bn = (label1>0).unsqueeze(1).cuda().float()
-            label1 = label1.cuda(obj.device)
-            label2 = label2.cuda(obj.device)
-            label = label.cuda(obj.device)
-
-            # print(image1.shape, image2.shape, label.shape, label2.shape, label.shape)
+            label1 = label1.to(obj.device).long()
+            label2 = label2.to(obj.device).long()
+            label = label.to(obj.device)
             
             out_change, outputs_A, outputs_B = model(image1, image2)
             
             optimizer.zero_grad()  
 
-            reduced_loss = loss_lovasz(out_change, outputs_A, outputs_B, label1, label2, label)
+            # reduced_loss = loss_lovasz(out_change, outputs_A, outputs_B, label1, label2, label)
+            loss_seg = seg_criterion(outputs_A, label1) * 0.5 +  seg_criterion(outputs_B, label2) * 0.5
+            loss_sc = criterion_sc(outputs_A[:,1:], outputs_B[:,1:], label)
+            loss_bn =  weighted_BCE_logits(out_change, label)
+            
+            reduced_loss = loss_seg + loss_bn + loss_sc
             
             reduced_loss.backward() 
             optimizer.step()
@@ -67,7 +74,7 @@ def train(obj):
             best_iter = epoch+1
         obj.logger.info("[TRAIN] train time is {:.2f}, best iter {}, max MIoU {:.4f}".format((datetime.datetime.now() - now).total_seconds(), best_iter, max_miou))
  
-    # test(obj)
+    test(obj)
  
 
 

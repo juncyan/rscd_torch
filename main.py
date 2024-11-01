@@ -49,7 +49,7 @@ def parse_args():
     parser.add_argument('--img_size', type=int, default=512,
                         help='input image size (default: 256)')
     parser.add_argument('--device', type=int, default=0,
-                        choices=[0, 1],
+                        choices=[-1, 0, 1],
                         help='device (default: gpu:0)')
     parser.add_argument('--dataset', type=str, default="Second",
                         help='dataset name (default: LEVIR_CD)')
@@ -60,15 +60,15 @@ def parse_args():
     parser.add_argument('--num_classes', type=int, default=7,
                         help='num classes (default: 7)')
     parser.add_argument('--batch_size', type=int, default=4,
-                        help='batch_size (default: 4)')
-    parser.add_argument('--lr', type=float, default=1e-4, metavar='LR',
+                        help='batch_size (default: 2)')
+    parser.add_argument('--lr', type=float, default=0.00035, metavar='LR',
                         help='learning rate (default: 1e-4)')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                         help='momentum (default: 0.9)')
     parser.add_argument('--weight_decay', type=float, default=5e-4, metavar='M',
                         help='w-decay (default: 5e-4)')
-    parser.add_argument('--num_workers', type=int, default=8,
-                        help='num_workers (default: 8)')
+    parser.add_argument('--num_workers', type=int, default=16,
+                        help='num_workers (default: 16)')
     parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_tiny_224_0229flex.yaml',
                         help='train mamba')
     parser.add_argument(
@@ -85,9 +85,9 @@ if __name__ == "__main__":
     # 代码运行预处理
     print("main")
     args = parse_args()
-    model = build_STMambaSCD(args)
+    # model = build_STMambaSCD(args)
     # model = SSCDl(in_channels=3, num_classes=args.num_classes)
-    # model = SCD_SAM(args.img_size, args.num_classes)
+    model = SCD_SAM(args.img_size, args.num_classes)
     w = Work(model, args,'./output')
     w()
     

@@ -17,17 +17,17 @@ except ImportError: # py3k
 
 
 def loss_lovasz(cd_map, out1, out2, label1, label2, label_cd):
-    ce_loss_cd = F.cross_entropy(cd_map, label_cd, ignore_index=255)
-    lovasz_loss_cd = lovasz_softmax(F.softmax(cd_map, dim=1), label_cd, ignore=255)
+    ce_loss_cd = F.cross_entropy(cd_map, label_cd.long(), ignore_index=255)
+    lovasz_loss_cd = lovasz_softmax(F.softmax(cd_map, dim=1), label_cd.long(), ignore=255)
 
-    ce_loss_clf_t1 = F.cross_entropy(out1, label1, ignore_index=255)
-    lovasz_loss_clf_t1 = lovasz_softmax(F.softmax(out1, dim=1), label1, ignore=255)
+    ce_loss_clf_t1 = F.cross_entropy(out1, label1.long(), ignore_index=255)
+    lovasz_loss_clf_t1 = lovasz_softmax(F.softmax(out1, dim=1), label1.long(), ignore=255)
 
-    ce_loss_clf_t2 = F.cross_entropy(out2, label2, ignore_index=255)
-    lovasz_loss_clf_t2 = lovasz_softmax(F.softmax(out2, dim=1), label2, ignore=255)
+    ce_loss_clf_t2 = F.cross_entropy(out2, label2.long(), ignore_index=255)
+    lovasz_loss_clf_t2 = lovasz_softmax(F.softmax(out2, dim=1), label2.long(), ignore=255)
 
     # Mask for similarity loss (label == 255)
-    similarity_mask = (label1 == 255).float().unsqueeze(1).expand_as(out1)
+    similarity_mask = (label1 == 0).float().unsqueeze(1).expand_as(out1)
 
     # Similarity loss calculation (e.g., MSE)
     similarity_loss = F.mse_loss(F.softmax(out1, dim=1) * similarity_mask, F.softmax(out2, dim=1) * similarity_mask, reduction='mean')
