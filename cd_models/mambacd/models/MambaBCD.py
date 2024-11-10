@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 import argparse
 from .Mamba_backbone import Backbone_VSSM
-from ..vmamba.vmamba import VSSM, LayerNorm2d, VSSBlock, Permute
+from cd_models.vmamba.vmamba import VSSM, LayerNorm2d, VSSBlock, Permute
 import os
 import time
 import math

@@ -2,6 +2,8 @@ import copyreg
 import types
 import numpy as np
 
+
+
 class Metrics(object):
     def __init__(self, num_class):
         self.__num_class = num_class
@@ -107,8 +109,8 @@ class Metrics(object):
         if len(pred.shape) == 4 and pred.shape[1] != 1:
             pred = np.argmax(pred, axis=1)
 
-        gt_image = np.array(np.squeeze(lab),dtype=np.uint8)
-        pre_image = np.array(np.squeeze(pred),dtype=np.uint8)
+        gt_image = np.squeeze(lab)
+        pre_image = np.squeeze(pred)
         
         assert (np.max(pre_image) <= self.__num_class)
         # assert (len(gt_image) == len(pre_image))
@@ -129,6 +131,7 @@ class Metrics(object):
         self.__RealN = 0.  # TP+FN
         self.__RealP = 0.  # TP+FP
         self.__sum = 0.  # np.sum(self.__confusion_matrix)
+
 
 
 def pixel_accuracy(eval_segm, gt_segm):

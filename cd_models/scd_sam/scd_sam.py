@@ -25,7 +25,7 @@ class SCD_SAM(nn.Module):
         self.Semantic_Decoder = AFPN(self.inplanes)
 
         self.CSD = CSD(in_dim=self.inplanes, num_classes=self.inplanes)  
-        self.head = FCNHead(self.inplanes, num_classes, 1)
+        self.head = FCNHead(self.inplanes, num_classes, 2)
 
         if not pretrain is None:
             self._init_weight(pretrain)   

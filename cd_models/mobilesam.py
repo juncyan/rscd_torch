@@ -616,7 +616,7 @@ class TinyViT(nn.Module):
         B,N,C=x.size()
         WH=int(np.sqrt(N))
         x = x.view(B, WH, WH, C)
-        x=x.permute(0, 3, 1, 2)
+        # x=x.permute(0, 3, 1, 2)
         return x
 
     def forward_features(self, x):
@@ -682,9 +682,9 @@ class Sam(nn.Module):
         x = F.pad(x, (0, padw, 0, padh))
         return x
             
-def build_sam_vit_t():
+def build_sam_vit_t(img_size=512):
     mobile_sam = Sam(
-            image_encoder=TinyViT(img_size=512, in_chans=3, num_classes=1000,
+            image_encoder=TinyViT(img_size=img_size, in_chans=3, num_classes=1000,
                 embed_dims=[64, 128, 160, 320],
                 depths=[2, 2, 6, 2],
                 num_heads=[2, 4, 5, 10],

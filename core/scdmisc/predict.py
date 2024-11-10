@@ -131,7 +131,7 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
       
     
 
-def test(obj=None):
+def test(model, dataloader_test, args=None):
     """
     Launch evalution.
 
@@ -140,38 +140,37 @@ def test(obj=None):
         dataset (torch.io.DataLoader): Used to read and process test datasets.
         weights_path (string, optional): weights saved local.
     """
-    assert obj != None, "obj is None, please check!"
+    assert args != None, "obj is None, please check!"
 
-    model = obj.model
-    if obj.best_model_path:
-        layer_state_dict = torch.load(f"{obj.best_model_path}")
+    if args.best_model_path:
+        layer_state_dict = torch.load(f"{args.best_model_path}")
         model.load_state_dict(layer_state_dict)
     else:
         exit()
     
     time_flag = datetime.datetime.strftime(datetime.datetime.now(), r"%Y_%m_%d_%H")
 
-    img_dir = f"/mnt/data/Results/{obj.args.dataset}/{obj.model_name}_{time_flag}"
+    img_dir = f"/mnt/data/Results/{args.dataset}/{args.model_name}_{time_flag}"
     if not os.path.isdir(img_dir):
         os.makedirs(img_dir)
 
     logger = load_logger(f"{img_dir}/prediction.log")
-    logger.info(f"test {obj.args.dataset} on {obj.model_name}")
+    logger.info(f"test {args.args.dataset} on {args.model_name}")
    
     color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[0,0,128]])
 
-    evaluator = Metric_SCD(num_class=obj.args.num_classes)
+    evaluator = Metric_SCD(num_class=args.num_classes)
 
     with torch.no_grad():
         model.eval()
         reader_cost_averager = TimeAverager()
         batch_cost_averager = TimeAverager()
         batch_start = time.time()
-        for image1, image2, label1, label2,gt, file in tqdm(obj.test_loader):
+        for image1, image2, label1, label2,gt, file in tqdm(dataloader_test):
             reader_cost_averager.record(time.time() - batch_start)
 
-            image1 = image1.to(obj.device)
-            image2 = image2.to(obj.device)
+            image1 = image1.to(args.device)
+            image2 = image2.to(args.device)
             labels_A = np.array(label1, dtype=np.int64)
             labels_B = np.array(label2, dtype=np.int64)
 
@@ -188,7 +187,7 @@ def test(obj=None):
 
             outputs_A = outputs_A.cpu().detach()
             outputs_B = outputs_B.cpu().detach()
-            change_mask = F.sigmoid(out_change).cpu().detach()>0.5 # torch.argmax(out_change, axis=1).cpu().detach()
+            change_mask = torch.argmax(out_change, axis=1).cpu().detach() #F.sigmoid(out_change).cpu().detach()>0.5 #
 
             preds_A = torch.argmax(outputs_A, dim=1)
             preds_B = torch.argmax(outputs_B, dim=1)
@@ -216,16 +215,16 @@ def test(obj=None):
     metrics = evaluator.Get_Metric()
     miou = metrics['miou']
 
-    if obj.logger != None:
-        infor = "[EVAL] Images: {} batch_cost {:.4f}, reader_cost {:.4f}".format(obj.test_num, batch_cost, reader_cost)
-        obj.logger.info(infor)
-        obj.logger.info("[METRICS] MIoU:{:.4}, Kappa:{:.4}, F1:{:.4}, Sek:{:.4}".format(
+    if args.logger != None:
+        infor = "[EVAL] Images: {} batch_cost {:.4f}, reader_cost {:.4f}".format(args.test_num, batch_cost, reader_cost)
+        args.logger.info(infor)
+        args.logger.info("[METRICS] MIoU:{:.4}, Kappa:{:.4}, F1:{:.4}, Sek:{:.4}".format(
             miou,metrics['kappa'],metrics['f1'],metrics['sek']))
-        obj.logger.info("[METRICS] PA:{:.4}, Prec.:{:.4}, Recall:{:.4}".format(
+        args.logger.info("[METRICS] PA:{:.4}, Prec.:{:.4}, Recall:{:.4}".format(
             metrics['pa'],metrics['prec'],metrics['recall']))
         
     _,c,w,h = image1.shape
-    x= torch.rand([1,c,w,h]).cuda(obj.device)
+    x= torch.rand([1,c,w,h]).cuda(args.device)
     flops, params = profile(model, [x,x])
     
     logger.info(f"[PREDICT] model flops is {int(flops)}, params is {int(params)}")

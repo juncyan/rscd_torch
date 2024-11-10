@@ -1,4 +1,4 @@
-from cd_models.vmamba.vmamba import VSSM, LayerNorm2d
+from .vmamba import VSSM, LayerNorm2d
 
 import torch
 import torch.nn as nn

@@ -127,7 +127,7 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
       
     
 
-def test(obj=None):
+def test(model, dataset, args=None):
     """
     Launch evalution.
 
@@ -136,34 +136,32 @@ def test(obj=None):
         dataset (torch.io.DataLoader): Used to read and process test datasets.
         weights_path (string, optional): weights saved local.
     """
-    assert obj != None, "obj is None, please check!"
-
-    model = obj.model
-    if obj.best_model_path:
-        layer_state_dict = torch.load(f"{obj.best_model_path}")
+    assert args != None, "obj is None, please check!"
+    if args.best_model_path:
+        layer_state_dict = torch.load(f"{args.best_model_path}")
         model.load_state_dict(layer_state_dict)
     else:
         exit()
     
     time_flag = datetime.datetime.strftime(datetime.datetime.now(), r"%Y_%m_%d_%H")
 
-    img_dir = f"/mnt/data/Results/{obj.args.dataset}/{obj.model_name}_{time_flag}"
+    img_dir = f"/mnt/data/Results/{args.dataset}/{args.model_name}_{time_flag}"
     if not os.path.isdir(img_dir):
         os.makedirs(img_dir)
 
     logger = load_logger(f"{img_dir}/prediction.log")
-    logger.info(f"test {obj.args.dataset} on {obj.model_name}")
+    logger.info(f"test {args.dataset} on {args.model_name}")
    
     color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[0,0,128]])
 
-    evaluator = Metrics(num_class=obj.args.num_classes)
+    evaluator = Metrics(num_class=args.num_classes)
 
     with torch.no_grad():
-        for _, (img1, img2, label, name) in enumerate(obj.test_loader):
+        for _, (img1, img2, label, name) in enumerate(dataset):
     
             label = label
-            img1 = img1.cuda(obj.device)
-            img2 = img2.cuda(obj.device)
+            img1 = img1.cuda(args.device)
+            img2 = img2.cuda(args.device)
            
             pred = model(img1, img2)
             
@@ -206,20 +204,20 @@ def test(obj=None):
     macro_f1 = evaluator.Macro_F1()
     class_recall = evaluator.Recall()
 
-    infor = "[PREDICT] #Images: {}".format(obj.test_num)
-    obj.logger.info(infor)
+    infor = "[PREDICT] #Images: {}".format(args.test_num)
+    args.logger.info(infor)
     infor = "[METRICS] mIoU: {:.4f}, Acc: {:.4f}, Kappa: {:.4f}, mDice: {:.4f}, Macro_F1: {:.4f}".format(
             miou, acc, kappa, m_dice, macro_f1)
-    obj.logger.info(infor)
+    args.logger.info(infor)
 
-    obj.logger.info("[METRICS] Class IoU: " + str(np.round(class_iou, 4)))
-    obj.logger.info("[METRICS] Class Precision: " + str(np.round(class_precision, 4)))
-    obj.logger.info("[METRICS] Class Recall: " + str(np.round(class_recall, 4)))
-    obj.logger.info("[METRICS] Class F1: " + str(np.round(f1, 4)))
+    args.logger.info("[METRICS] Class IoU: " + str(np.round(class_iou, 4)))
+    args.logger.info("[METRICS] Class Precision: " + str(np.round(class_precision, 4)))
+    args.logger.info("[METRICS] Class Recall: " + str(np.round(class_recall, 4)))
+    args.logger.info("[METRICS] Class F1: " + str(np.round(f1, 4)))
     # print(batch_cost, reader_cost)
 
     _,c,w,h = img1.shape
-    x= torch.rand([1,c,w,h]).cuda(obj.device)
+    x= torch.rand([1,c,w,h]).cuda(args.device)
     flops, params = profile(model, [x,x])
     
     logger.info(f"[PREDICT] model flops is {int(flops)}, params is {int(params)}")
@@ -233,7 +231,7 @@ def test(obj=None):
         data.append(lab)
     if data != []:
         data = np.array(data)
-        pd.DataFrame(data).to_csv(os.path.join(img_dir, f'{obj.model_name}_violin.csv'), header=['TN', 'TP', 'FP', 'FN'], index=False)
+        pd.DataFrame(data).to_csv(os.path.join(img_dir, f'{args.model_name}_violin.csv'), header=['TN', 'TP', 'FP', 'FN'], index=False)
 
 
 def cls_count(label):

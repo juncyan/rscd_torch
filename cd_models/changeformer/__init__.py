@@ -1,1 +1,1 @@
-from .changeformer import *
+from .changeformer import ChangeFormerV6
