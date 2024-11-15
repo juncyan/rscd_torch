@@ -33,7 +33,7 @@ from cd_models.cgnet import CGNet
 from cd_models.rsmamba import RSMamba_CD
 from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
-from models.model import SAM_Mamba
+from models.model import SAM_Mamba, LargeMamba
 
 from core.bcdwork import Work
 
@@ -61,10 +61,10 @@ def parse_args():
     parser.add_argument('--en_load_edge', type=bool, default=False,
                         help='en_load_edge False')
     parser.add_argument('--num_classes', type=int, default=2,
-                        help='num classes (default: 7)')
-    parser.add_argument('--batch_size', type=int, default=8,
-                        help='batch_size (default: 2)')
-    parser.add_argument('--lr', type=float, default=0.00035, metavar='LR',
+                        help='num classes (default: 2)')
+    parser.add_argument('--batch_size', type=int, default=2,
+                        help='batch_size (default: 4)')
+    parser.add_argument('--lr', type=float, default=5e-4, metavar='LR',
                         help='learning rate (default: 1e-4)')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                         help='momentum (default: 0.9)')

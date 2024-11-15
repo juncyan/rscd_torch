@@ -1133,21 +1133,25 @@ class SS2D(nn.Module):
     def forwardv2(self, x: torch.Tensor, **kwargs):
         with_dconv = (self.d_conv > 1)
         x = self.in_proj(x)
+        # print('in_proj: ', x.shape)
         if not self.disable_z:
             x, z = x.chunk(2, dim=(1 if self.channel_first else -1)) # (b, h, w, d)
+            # print('chunk: ', x.shape)
             if not self.disable_z_act:
                 z = self.act(z)
         
         if not self.channel_first:
             x = x.permute(0, 3, 1, 2).contiguous()
+        # print('before conv2d: ', x.shape)
         if with_dconv:
             x = self.conv2d(x) # (b, d, h, w)
         x = self.act(x)
-        
+        # print('before forward_core: ', x.shape)
         y = self.forward_core(x)
-
+        # print('after forward_core: ', x.shape)
         if not self.disable_z:
             y = y * z
+        # print('multi forward_core: ', y.shape)
         out = self.dropout(self.out_proj(y))
         return out
 

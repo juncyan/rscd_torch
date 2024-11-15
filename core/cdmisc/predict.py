@@ -145,12 +145,12 @@ def test(model, dataset, args=None):
     
     time_flag = datetime.datetime.strftime(datetime.datetime.now(), r"%Y_%m_%d_%H")
 
-    img_dir = f"/mnt/data/Results/{args.dataset}/{args.model_name}_{time_flag}"
+    img_dir = f"/mnt/data/Results/{args.dataset}/{args.model}_{time_flag}"
     if not os.path.isdir(img_dir):
         os.makedirs(img_dir)
 
     logger = load_logger(f"{img_dir}/prediction.log")
-    logger.info(f"test {args.dataset} on {args.model_name}")
+    logger.info(f"test {args.dataset} on {args.model}")
    
     color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[0,0,128]])
 
@@ -231,7 +231,7 @@ def test(model, dataset, args=None):
         data.append(lab)
     if data != []:
         data = np.array(data)
-        pd.DataFrame(data).to_csv(os.path.join(img_dir, f'{args.model_name}_violin.csv'), header=['TN', 'TP', 'FP', 'FN'], index=False)
+        pd.DataFrame(data).to_csv(os.path.join(img_dir, f'{args.model}_violin.csv'), header=['TN', 'TP', 'FP', 'FN'], index=False)
 
 
 def cls_count(label):

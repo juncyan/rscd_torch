@@ -150,12 +150,12 @@ def test(model, dataloader_test, args=None):
     
     time_flag = datetime.datetime.strftime(datetime.datetime.now(), r"%Y_%m_%d_%H")
 
-    img_dir = f"/mnt/data/Results/{args.dataset}/{args.model_name}_{time_flag}"
+    img_dir = f"/mnt/data/Results/{args.dataset}/{args.model}_{time_flag}"
     if not os.path.isdir(img_dir):
         os.makedirs(img_dir)
 
     logger = load_logger(f"{img_dir}/prediction.log")
-    logger.info(f"test {args.args.dataset} on {args.model_name}")
+    logger.info(f"test {args.args.dataset} on {args.model}")
    
     color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[0,0,128]])
 

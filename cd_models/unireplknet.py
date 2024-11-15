@@ -14,6 +14,7 @@ import torch.nn.functional as F
 from timm.models.layers import trunc_normal_, DropPath, to_2tuple
 from timm.models.registry import register_model
 from functools import partial
+from collections import OrderedDict
 import torch.utils.checkpoint as checkpoint
 try:
     from huggingface_hub import hf_hub_download
@@ -27,13 +28,12 @@ has_mmseg = False
 #   =============== delete one of the following two segments if you get a confliction
 try:
     from mmseg.models.builder import BACKBONES as seg_BACKBONES
-    from mmseg.utils import get_root_logger
-    from mmcv.runner import _load_checkpoint
+    # from mmseg.utils import get_root_logger
+    from cd_models.utils.mmcv_load_checkpoint import _load_checkpoint
     has_mmseg = True
 except ImportError:
-    get_root_logger = None
     _load_checkpoint = None
-
+get_root_logger = None
 # try:
 #     from mmdet.models.builder import BACKBONES as det_BACKBONES
 #     from mmdet.utils import get_root_logger
@@ -412,7 +412,7 @@ class UniRepLKNet(nn.Module):
     """
     def __init__(self,
                  in_chans=3,
-                 num_classes=1000,
+                 num_classes=21841,
                  depths=(3, 3, 27, 3),
                  dims=(96, 192, 384, 768),
                  drop_path_rate=0.,
@@ -481,11 +481,11 @@ class UniRepLKNet(nn.Module):
 
         if self.for_pretrain:
             self.init_cfg = None
-            self.norm = nn.LayerNorm(last_channels, eps=1e-6)  # final norm layer
-            self.head = nn.Linear(last_channels, num_classes)
+            # self.norm = nn.LayerNorm(last_channels, eps=1e-6)  # final norm layer
+            # self.head = nn.Linear(last_channels, num_classes)
             self.apply(self._init_weights)
-            self.head.weight.data.mul_(head_init_scale)
-            self.head.bias.data.mul_(head_init_scale)
+            # self.head.weight.data.mul_(head_init_scale)
+            # self.head.bias.data.mul_(head_init_scale)
             self.output_mode = 'logits'
         else:
             self.init_cfg = init_cfg        # OpenMMLab style init
@@ -559,22 +559,28 @@ class UniRepLKNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
+        # print(self.output_mode)
+        features = []
         if self.output_mode == 'logits':
             for stage_idx in range(4):
                 x = self.downsample_layers[stage_idx](x)
                 x = self.stages[stage_idx](x)
-            x = self.norm(x.mean([-2, -1]))
-            x = self.head(x)
-            return x
-        elif self.output_mode == 'features':
-            outs = []
-            for stage_idx in range(4):
-                x = self.downsample_layers[stage_idx](x)
-                x = self.stages[stage_idx](x)
-                outs.append(self.__getattr__(f'norm{stage_idx}')(x))
-            return outs
+                features.append(x)
+            return features
         else:
-            raise ValueError('Defined new output mode?')
+            return None
+        #     x = self.norm(x.mean([-2, -1]))
+        #     x = self.head(x)
+        #     return x
+        # elif self.output_mode == 'features':
+        #     outs = []
+        #     for stage_idx in range(4):
+        #         x = self.downsample_layers[stage_idx](x)
+        #         x = self.stages[stage_idx](x)
+        #         outs.append(self.__getattr__(f'norm{stage_idx}')(x))
+        #     return outs
+        # else:
+        #     raise ValueError('Defined new output mode?')
 
     def reparameterize_unireplknet(self):
         for m in self.modules():
@@ -614,24 +620,24 @@ class LayerNorm(nn.Module):
 
 
 #   For easy use as backbone in MMDetection framework. Ignore these lines if you do not use MMDetection
-if has_mmdet:
-    @det_BACKBONES.register_module()
-    class UniRepLKNetBackbone(UniRepLKNet):
-        def __init__(self,
-                     depths=(3, 3, 27, 3),
-                     dims=(96, 192, 384, 768),
-                     drop_path_rate=0.,
-                     layer_scale_init_value=1e-6,
-                     kernel_sizes=None,
-                     deploy=False,
-                     with_cp=False,
-                     init_cfg=None,
-                     attempt_use_lk_impl=False):
-            assert init_cfg is not None
-            super().__init__(in_chans=3, num_classes=None, depths=depths, dims=dims,
-                             drop_path_rate=drop_path_rate, layer_scale_init_value=layer_scale_init_value,
-                             kernel_sizes=kernel_sizes, deploy=deploy, with_cp=with_cp,
-                             init_cfg=init_cfg, attempt_use_lk_impl=attempt_use_lk_impl, use_sync_bn=True)
+# if has_mmdet:
+#     @det_BACKBONES.register_module()
+#     class UniRepLKNetBackbone(UniRepLKNet):
+#         def __init__(self,
+#                      depths=(3, 3, 27, 3),
+#                      dims=(96, 192, 384, 768),
+#                      drop_path_rate=0.,
+#                      layer_scale_init_value=1e-6,
+#                      kernel_sizes=None,
+#                      deploy=False,
+#                      with_cp=False,
+#                      init_cfg=None,
+#                      attempt_use_lk_impl=False):
+#             assert init_cfg is not None
+#             super().__init__(in_chans=3, num_classes=None, depths=depths, dims=dims,
+#                              drop_path_rate=drop_path_rate, layer_scale_init_value=layer_scale_init_value,
+#                              kernel_sizes=kernel_sizes, deploy=deploy, with_cp=with_cp,
+#                              init_cfg=init_cfg, attempt_use_lk_impl=attempt_use_lk_impl, use_sync_bn=True)
 
 #   For easy use as backbone in MMSegmentation framework. Ignore these lines if you do not use MMSegmentation
 if has_mmseg:
@@ -685,7 +691,14 @@ def load_with_key(model, key):
         checkpoint = torch.hub.load_state_dict_from_url(url=model_urls[key], map_location="cpu", check_hash=True)
     if 'model' in checkpoint:
         checkpoint = checkpoint['model']
-    model.load_state_dict(checkpoint)
+    # pretrained_dict = torch.load(sam_checkpoint)
+    model_dict = model.state_dict()
+    pretrained_dict = {k: v for k, v in checkpoint.items()
+                        if k in model_dict.keys()}
+    model_dict.update(pretrained_dict)# 将预训练参数更新到新的网络层
+
+    model.load_state_dict(model_dict, strict=True)
+    # model.load_state_dict(checkpoint)
 
 def initialize_with_pretrained(model, model_name, in_1k_pretrained, in_22k_pretrained, in_22k_to_1k):
     if in_1k_pretrained:
@@ -730,25 +743,25 @@ def unireplknet_t(in_1k_pretrained=False, **kwargs):
     return model
 
 @register_model
-def unireplknet_s(in_1k_pretrained=False, in_22k_pretrained=False, in_22k_to_1k=False, **kwargs):
+def unireplknet_s(in_1k_pretrained=False, in_22k_pretrained=True, in_22k_to_1k=False, **kwargs):
     model = UniRepLKNet(depths=UniRepLKNet_S_B_L_XL_depths, dims=(96, 192, 384, 768), **kwargs)
     initialize_with_pretrained(model, 'unireplknet_s', in_1k_pretrained, in_22k_pretrained, in_22k_to_1k)
     return model
 
 @register_model
-def unireplknet_b(in_22k_pretrained=False, in_22k_to_1k=False, **kwargs):
+def unireplknet_b(in_22k_pretrained=True, in_22k_to_1k=False, **kwargs):
     model = UniRepLKNet(depths=UniRepLKNet_S_B_L_XL_depths, dims=(128, 256, 512, 1024), **kwargs)
     initialize_with_pretrained(model, 'unireplknet_b', False, in_22k_pretrained, in_22k_to_1k)
     return model
 
 @register_model
-def unireplknet_l(in_22k_pretrained=False, in_22k_to_1k=False, **kwargs):
+def unireplknet_l(in_22k_pretrained=True, in_22k_to_1k=False, **kwargs):
     model = UniRepLKNet(depths=UniRepLKNet_S_B_L_XL_depths, dims=(192, 384, 768, 1536), **kwargs)
     initialize_with_pretrained(model, 'unireplknet_l', False, in_22k_pretrained, in_22k_to_1k)
     return model
 
 @register_model
-def unireplknet_xl(in_22k_pretrained=False, in_22k_to_1k=False, **kwargs):
+def unireplknet_xl(in_22k_pretrained=True, in_22k_to_1k=False, **kwargs):
     model = UniRepLKNet(depths=UniRepLKNet_S_B_L_XL_depths, dims=(256, 512, 1024, 2048), **kwargs)
     initialize_with_pretrained(model, 'unireplknet_xl', False, in_22k_pretrained, in_22k_to_1k)
     return model

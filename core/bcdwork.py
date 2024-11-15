@@ -31,9 +31,9 @@ class Work():
         train(model, self.train_loader, self.val_loader, self.test_loader, self.args)
 
     def dataloader(self, datasetlist=['train', 'val', 'test']):
-        train_data = CDReader(self.dataset_path, datasetlist[0], self.args.en_load_edge)
-        val_data = CDReader(self.dataset_path, datasetlist[2], self.args.en_load_edge)
-        test_data = TestReader(self.dataset_path, datasetlist[2], self.args.en_load_edge)
+        train_data = CDReader(self.dataset_path, datasetlist[0])
+        val_data = CDReader(self.dataset_path, datasetlist[2])
+        test_data = CDReader(self.dataset_path, datasetlist[2])
 
         self.args.traindata_num = train_data.__len__()
         self.args.val_num = val_data.__len__()
@@ -66,7 +66,7 @@ class Work():
         self.args.best_model_path = os.path.join(self.save_dir, "{}_best.pth".format(self.args.model))
         log_path = os.path.join(self.save_dir, "train_{}.log".format(self.args.model))
         self.args.metric_path = os.path.join(self.save_dir, "{}_metrics.csv".format(self.args.model))
-        self.args.save_die = self.save_dir
+        self.args.save_dir = self.save_dir
         print("log save at {}, metric save at {}, weight save at {}".format(log_path, self.args.metric_path, self.args.best_model_path))
         self.args.logger = load_logger(log_path)
         self.log_misc()

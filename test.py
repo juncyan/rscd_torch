@@ -8,50 +8,13 @@ import random
 from skimage import io
 import os
 import pandas as pd
-from models.model import SAM_Mamba
+from models.model import SAM_Mamba, LargeMamba
+from models.replk import SS2Dv_Lark, VSSBlock
 import argparse
+import timm
+from cd_models.unireplknet import UniRepLKNet, unireplknet_b, unireplknet_s
 
-def parse_args():
-    parser = argparse.ArgumentParser(description='Semantic Segmentation Overfitting Test')
-    # model
-    parser.add_argument('--model', type=str, default='fssh',
-                        help='model name (default: msfgnet)')
-    parser.add_argument('--img_size', type=int, default=512,
-                        help='input image size (default: 256)')
-    parser.add_argument('--device', type=int, default=0,
-                        choices=[-1, 0, 1],
-                        help='device (default: gpu:0)')
-    parser.add_argument('--dataset', type=str, default="CLCD",
-                        help='dataset name (default: CLCD)')
-    parser.add_argument('--iters', type=int, default=100, metavar='N',
-                        help='number of epochs to train (default: 100)')
-    parser.add_argument('--en_load_edge', type=bool, default=False,
-                        help='en_load_edge False')
-    parser.add_argument('--num_classes', type=int, default=7,
-                        help='num classes (default: 7)')
-    parser.add_argument('--batch_size', type=int, default=4,
-                        help='batch_size (default: 2)')
-    parser.add_argument('--lr', type=float, default=0.00035, metavar='LR',
-                        help='learning rate (default: 1e-4)')
-    parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
-                        help='momentum (default: 0.9)')
-    parser.add_argument('--weight_decay', type=float, default=5e-4, metavar='M',
-                        help='w-decay (default: 5e-4)')
-    parser.add_argument('--num_workers', type=int, default=16,
-                        help='num_workers (default: 16)')
-    parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_tiny_224_0229flex.yaml',
-                        help='train mamba')
-    parser.add_argument(
-        "--opts",
-        help="Modify config options by adding 'KEY VALUE' pairs. ",
-        default=None,
-        nargs='+',
-    )
-    args = parser.parse_args()
-    return args
-
-if __name__ == "__main__":
-    args = parse_args()
-    a = args
-    a.x = 10
-    print(a)
+x = torch.rand([1,512,512,16]).cuda(1)
+m = VSSBlock(16, forward_type='v3noz').cuda(1)
+y = m(x)
+print(y.shape)
