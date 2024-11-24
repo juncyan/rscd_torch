@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import datetime
 
-from .datasets import CDReader, TestReader
+from .datasets import CDReader
 from .cdmisc import load_logger
 from .cdmisc import train
 

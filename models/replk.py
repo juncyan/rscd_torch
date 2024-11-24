@@ -125,13 +125,12 @@ class UniRepLKNetBlock(nn.Module):
             self.pwconv2 = nn.Sequential(new_linear, self.pwconv2[1])
 
 
-class SS2Dv_Lark(nn.Module):
+class SS2D_v3(nn.Module):
     def __init__(
         self,
         # basic dims ===========
         in_ch=96,
         out_ch=96,
-        d_conv=13,
         d_state=16,
         ssm_ratio=2.0,
         dt_rank="auto",
@@ -150,7 +149,6 @@ class SS2Dv_Lark(nn.Module):
         d_model = in_ch
         d_inner = int(ssm_ratio * d_model)
         dt_rank = math.ceil(d_model / 16) if dt_rank == "auto" else dt_rank
-        self.d_conv = d_conv
         self.channel_first = channel_first
     
 
@@ -158,8 +156,11 @@ class SS2Dv_Lark(nn.Module):
         k_group = 4
     
         # self.conv2d = DilatedReparamBlock(d_model, 13)
-        self.conv3 = nn.Sequential(nn.Conv2d(in_ch, d_inner, 1), nn.BatchNorm2d(d_inner), nn.ReLU())
-        self.conv4 = nn.Sequential(nn.Conv2d(d_inner, out_ch, 1), nn.BatchNorm2d(out_ch), nn.ReLU())
+        # self.conv3 = nn.Sequential(nn.Conv2d(in_ch, d_inner, 1), nn.BatchNorm2d(d_inner), nn.ReLU())
+        # self.conv4 = nn.Sequential(nn.Conv2d(d_inner, out_ch, 1), nn.BatchNorm2d(out_ch), nn.ReLU())
+
+        self.conv3 = nn.Conv2d(in_ch, d_inner, 1)
+        self.conv4 = nn.Conv2d(d_inner, out_ch, 1)
 
         if channel_first:
             self.out_norm_shape = "v1"
@@ -264,7 +265,6 @@ class SS2Dv_Lark(nn.Module):
         )
 
     def forward(self, x: torch.Tensor):
-        # y = self.conv2d(x) # (b, d, h, w)
         y = self.conv3(x)
         z = self.forward_core(y)
         out = z + y
@@ -295,8 +295,8 @@ class DilatedReparamBlock(nn.Module):
             self.kernel_sizes = [5, 7, 3, 3]
             self.dilates = [1, 2, 3, 4]
         elif kernel_size == 11:
-            self.kernel_sizes = [5, 5, 3, 3]
-            self.dilates = [1, 2, 3, 4]
+            self.kernel_sizes = [5, 5, 3]
+            self.dilates = [1, 2, 4]
         elif kernel_size == 9:
             self.kernel_sizes = [5, 5, 3]
             self.dilates = [1, 2, 3]

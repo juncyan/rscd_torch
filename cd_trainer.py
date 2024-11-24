@@ -30,10 +30,10 @@ from cd_models.rdpnet import RDPNet
 from cd_models.bisrnet import BiSRNet, SSCDl
 from cd_models.hanet import HAN
 from cd_models.cgnet import CGNet
-from cd_models.rsmamba import RSMamba_CD
-from cd_models.mambacd import build_STMambaSCD
+# from cd_models.rsmamba import RSMamba_CD
+# from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
-from models.model import SAM_Mamba, LargeMamba
+from models.model import RepLKSSM_CD_v1, RepLKSSM_CD, RepLKSSM_CD_v2
 
 from core.bcdwork import Work
 
@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument('--device', type=int, default=0,
                         choices=[-1, 0, 1],
                         help='device (default: gpu:0)')
-    parser.add_argument('--dataset', type=str, default="CLCD",
+    parser.add_argument('--dataset', type=str, default="SYSU_CD",
                         help='dataset name (default: LEVIR_CD)')
     parser.add_argument('--iters', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 100)')
@@ -62,9 +62,9 @@ def parse_args():
                         help='en_load_edge False')
     parser.add_argument('--num_classes', type=int, default=2,
                         help='num classes (default: 2)')
-    parser.add_argument('--batch_size', type=int, default=2,
-                        help='batch_size (default: 4)')
-    parser.add_argument('--lr', type=float, default=5e-4, metavar='LR',
+    parser.add_argument('--batch_size', type=int, default=16,
+                        help='batch_size (default: 8)')
+    parser.add_argument('--lr', type=float, default=2.8e-4, metavar='LR',
                         help='learning rate (default: 1e-4)')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                         help='momentum (default: 0.9)')
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     args = parse_args()
     # model = build_STMambaSCD(args)
     # model = SSCDl(in_channels=3, num_classes=args.num_classes)
-    model = SAM_Mamba(args.img_size)
+    model = RepLKSSM_CD_v2()
     w = Work(model, args)
     
     

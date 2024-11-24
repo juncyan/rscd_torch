@@ -15,7 +15,7 @@ def evaluation(model,dataloader_eval,args):
         model.eval()
         p_start = datetime.now()
         num_eval = 0
-        for image1, image2, label in tqdm(dataloader_eval):
+        for image1, image2, label, _ in tqdm(dataloader_eval):
             num_eval +=1
             image1 = image1.cuda(args.device)
             image2 = image2.cuda(args.device)
