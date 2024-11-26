@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .utils import ConvBNAct
 # from cd_models.vmamba import VSSM, LayerNorm2d, VSSBlock, Permute
-from .replk import SS2D_v3, DilatedReparamBlock, UniRepLKNetBlock
+from .replk import SS2D_v3, DilatedReparamBlock, LKSSMBlock
 from .ram import AdditiveTokenMixer
 
 
@@ -77,10 +77,8 @@ class DTMS_v1(nn.Module):
         #         gmlp=False, use_checkpoint=use_checkpoint)
         self.conv = ConvBNAct(2*in_ch, out_ch, 1)
         self.cbr1 = ConvBNAct(3*out_ch, out_ch, 1)
-        self.cbr2 = AdditiveTokenMixer(out_ch)
+        # self.cbr2 = AdditiveTokenMixer(out_ch)
         self.cbr3 = ConvBNAct(out_ch, out_ch, 3, padding=1)
-        
-        
 
     def forward(self, x1, x2):
         _device = x1.device
@@ -107,7 +105,7 @@ class DTMS_v1(nn.Module):
         # t = self.ssm3(t)
         # t = t.permute(0, 3, 1, 2)
         t = self.cbr1(t)
-        t = self.cbr2(t)
+        # t = self.cbr2(t)
         t = self.cbr3(t)
         
         t = t + tp

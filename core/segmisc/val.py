@@ -6,14 +6,14 @@ import time
 import os
 from tqdm import tqdm
 from ..cdmisc.utils import TimeAverager
-from .metric import Metric_SCD
+from .metric import Metrics
 import pandas as pd
 
 
 def evaluation(model, dataloader_val, args):
     torch.cuda.empty_cache()
    
-    evaluator = Metric_SCD(num_class=args.num_classes)
+    evaluator = Metrics(num_class=args.num_classes)
 
     with torch.no_grad():
         model.eval()
@@ -21,18 +21,17 @@ def evaluation(model, dataloader_val, args):
         batch_cost_averager = TimeAverager()
         batch_start = time.time()
 
-        for image1, image2, label1, label2,_, _ in tqdm(dataloader_val):
+        for image, label, _ in tqdm(dataloader_val):
             reader_cost_averager.record(time.time() - batch_start)
 
-            image1 = image1.to(args.device)
-            image2 = image2.to(args.device)
-            labels_A = np.array(label1, dtype=np.int64)
-            labels_B = np.array(label2, dtype=np.int64)
+            image = image.to(args.device)
+            label = np.array(label, dtype=np.int64)
+            
 
-            out_change, outputs_A, outputs_B = model(image1, image2)
+            preds = model(image)
 
             batch_cost_averager.record(
-                time.time() - batch_start, num_samples=len(out_change))
+                time.time() - batch_start, num_samples=len(preds))
             batch_cost = batch_cost_averager.get_average()
             reader_cost = reader_cost_averager.get_average()
 
@@ -40,28 +39,19 @@ def evaluation(model, dataloader_val, args):
             batch_cost_averager.reset()
             batch_start = time.time()
 
-            outputs_A = outputs_A.cpu().detach()
-            outputs_B = outputs_B.cpu().detach()
-            change_mask = torch.argmax(out_change, axis=1).cpu().detach() #F.sigmoid(out_change).cpu().detach()>0.5 #
-
-            preds_A = torch.argmax(outputs_A, dim=1)
-            preds_B = torch.argmax(outputs_B, dim=1)
-            preds_A = (preds_A*change_mask.squeeze().long()).cpu().numpy()
-            preds_B = (preds_B*change_mask.squeeze().long()).cpu().numpy()
-
-            evaluator.add_batch(preds_A, labels_A)
-            evaluator.add_batch(preds_B, labels_B)
+            preds = torch.argmax(preds, 1, False).cpu().numpy()
+            evaluator.add_batch(preds, label)
         
-    metrics = evaluator.Get_Metric()
+    metrics, iou, f1 = evaluator.Get_Metric(True)
     miou = metrics['miou']
 
     if args.logger != None:
         infor = "[EVAL] Images: {} batch_cost {:.4f}, reader_cost {:.4f}".format(args.test_num, batch_cost, reader_cost)
         args.logger.info(infor)
-        args.logger.info("[METRICS] MIoU:{:.4}, Kappa:{:.4}, F1:{:.4}, Sek:{:.4}".format(
-            miou,metrics['kappa'],metrics['f1'],metrics['sek']))
-        args.logger.info("[METRICS] PA:{:.4}, Prec.:{:.4}, Recall:{:.4}".format(
-            metrics['pa'],metrics['prec'],metrics['recall']))
+        args.logger.info("[METRICS] MIoU:{:.4}, Kappa:{:.4}, mF1:{:.4}, PA:{:.4}".format(miou,metrics['kappa'],metrics['mf1'], metrics['pa']))
+        args.logger.info("[METRICS] Class IoU: " + str(np.round(iou, 4)))
+        args.logger.info("[METRICS] Class F1: " + str(np.round(f1, 4)))
+            
         
     d = pd.DataFrame([metrics])
     if os.path.exists(args.metric_path):

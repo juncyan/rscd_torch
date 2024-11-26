@@ -7,9 +7,9 @@ from torch.utils.data import DataLoader
 import numpy as np
 import datetime
 
-from .datasets import SCDReader
+from .datasets import SegReader
 from .cdmisc import load_logger
-from .scdmisc.train import train
+from .segmisc.train import train
 
 
 class Work():
@@ -31,9 +31,9 @@ class Work():
         train(model, self.train_loader, self.val_loader, self.test_loader, self.args)
 
     def dataloader(self, datasetlist=['train', 'val', 'test']):
-        train_data = SCDReader(self.dataset_path, datasetlist[0])
-        val_data = SCDReader(self.dataset_path, datasetlist[2])
-        test_data = SCDReader(self.dataset_path, datasetlist[2])
+        train_data = SegReader(self.dataset_path, datasetlist[0])
+        val_data = SegReader(self.dataset_path, datasetlist[2])
+        test_data = SegReader(self.dataset_path, datasetlist[2])
 
         self.args.traindata_num = train_data.__len__()
         self.args.val_num = val_data.__len__()

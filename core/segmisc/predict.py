@@ -25,7 +25,7 @@ import datetime
 from thop import profile
 from tqdm import tqdm
 from ..cdmisc.utils import TimeAverager
-from ..cdmisc.metrics import Metrics
+from .metric import Metrics
 from core.cdmisc.logger import load_logger
 
 
@@ -103,7 +103,7 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
 
     evaluator.calc()
     miou = evaluator.Mean_Intersection_over_Union()
-    acc = evaluator.Pixel_Accuracy()
+    pa = evaluator.Pixel_Accuracy()
     class_iou = evaluator.Intersection_over_Union()
     class_precision = evaluator.Class_Precision()
     kappa = evaluator.Kappa()
@@ -114,8 +114,8 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
 
     infor = "[PREDICT] #Images: {}".format(len(dataset))
     logger.info(infor)
-    infor = "[METRICS] mIoU: {:.4f}, Acc: {:.4f}, Kappa: {:.4f}, mDice: {:.4f}, Macro_F1: {:.4f}".format(
-            miou, acc, kappa, m_dice, macro_f1)
+    infor = "[METRICS] mIoU: {:.4f}, PA: {:.4f}, Kappa: {:.4f}, mDice: {:.4f}, Macro_F1: {:.4f}".format(
+            miou, pa, kappa, m_dice, macro_f1)
     logger.info(infor)
 
     logger.info("[METRICS] Class IoU: " + str(np.round(class_iou, 4)))
@@ -166,18 +166,16 @@ def test(model, dataloader_test, args=None):
         reader_cost_averager = TimeAverager()
         batch_cost_averager = TimeAverager()
         batch_start = time.time()
-        for image1, image2, label1, label2,gt, file in tqdm(dataloader_test):
+        for image, label, file in tqdm(dataloader_test):
             reader_cost_averager.record(time.time() - batch_start)
 
-            image1 = image1.to(args.device)
-            image2 = image2.to(args.device)
-            labels_A = np.array(label1, dtype=np.int64)
-            labels_B = np.array(label2, dtype=np.int64)
+            image = image.to(args.device)
+            label = np.array(label, dtype=np.int64)
 
-            out_change, outputs_A, outputs_B = model(image1, image2)
+            preds = model(image)
 
             batch_cost_averager.record(
-                time.time() - batch_start, num_samples=len(out_change))
+                time.time() - batch_start, num_samples=len(preds))
             batch_cost = batch_cost_averager.get_average()
             reader_cost = reader_cost_averager.get_average()
 
@@ -185,45 +183,25 @@ def test(model, dataloader_test, args=None):
             batch_cost_averager.reset()
             batch_start = time.time()
 
-            outputs_A = outputs_A.cpu().detach()
-            outputs_B = outputs_B.cpu().detach()
-            change_mask = torch.argmax(out_change, axis=1).cpu().detach() #F.sigmoid(out_change).cpu().detach()>0.5 #
+            preds = torch.argmax(preds, 1, False).cpu().numpy()
+            evaluator.add_batch(preds, label)
 
-            preds_A = torch.argmax(outputs_A, dim=1)
-            preds_B = torch.argmax(outputs_B, dim=1)
-            preds_A = (preds_A*change_mask.squeeze().long()).cpu().numpy()
-            preds_B = (preds_B*change_mask.squeeze().long()).cpu().numpy()
-
-            evaluator.add_batch(preds_A, labels_A)
-            evaluator.add_batch(preds_B, labels_B)
-
-            for idx, (is1, is2, cdm) in enumerate(zip(preds_A, preds_B, change_mask)):
-                cdm = np.array(cdm.squeeze(), np.int8)
-                if np.max(cdm) == np.min(cdm):
+            for idx, pred in enumerate(preds):
+                pred = np.array(pred.squeeze(), np.int8)
+                if np.max(preds) == np.min(preds):
                     continue
-                flag_local = (gt[idx] - cdm)
-                cdm[flag_local == -1] = 2
-                cdm[flag_local == 1] = 3
-                name = file[idx]
-                cv2.imwrite(f"{img_dir}/{name}", cdm)
-                fa = name.replace(".", "_A.")
-                fb = name.replace(".", "_B.")
-                cv2.imwrite(f"{img_dir}/{fa}", is1)
-                cv2.imwrite(f"{img_dir}/{fb}", is2)
-
-    evaluator.get_hist(save_path=f"{img_dir}/hist.csv")
+                cv2.imwrite(f"{img_dir}/{file[idx]}", pred)
+            
     metrics = evaluator.Get_Metric()
     miou = metrics['miou']
 
     if args.logger != None:
         infor = "[EVAL] Images: {} batch_cost {:.4f}, reader_cost {:.4f}".format(args.test_num, batch_cost, reader_cost)
         args.logger.info(infor)
-        args.logger.info("[METRICS] MIoU:{:.4}, Kappa:{:.4}, F1:{:.4}, Sek:{:.4}".format(
-            miou,metrics['kappa'],metrics['f1'],metrics['sek']))
-        args.logger.info("[METRICS] PA:{:.4}, Prec.:{:.4}, Recall:{:.4}".format(
-            metrics['pa'],metrics['prec'],metrics['recall']))
+        args.logger.info("[METRICS] MIoU:{:.4}, Kappa:{:.4}, mF1:{:.4}, PA:{:.4}".format(
+            miou,metrics['kappa'],metrics['mf1'],metrics['pa']))
         
-    _,c,w,h = image1.shape
+    _,c,w,h = image.shape
     x= torch.rand([1,c,w,h]).cuda(args.device)
     flops, params = profile(model, [x,x])
     

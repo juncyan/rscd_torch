@@ -382,6 +382,6 @@ class UltraLightUNet(nn.Module):
        
         p4 = self.out4(out)
 
-        return [p4] #[p4, p3, p2, p1]
+        return p4 #[p4, p3, p2, p1]
 
 #EOF

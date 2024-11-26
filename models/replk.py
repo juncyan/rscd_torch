@@ -3,13 +3,12 @@ import torch.nn as nn
 from typing import Optional, Callable, Any
 import torch.utils.checkpoint as checkpoint
 
-from cd_models.unireplknet import get_conv2d, get_bn, fuse_bn, merge_dilated_into_large_kernel, SEBlock, NCHWtoNHWC,NHWCtoNCHW, GRNwithNHWC
+from cd_models.unireplknet import get_conv2d, get_bn, fuse_bn, merge_dilated_into_large_kernel, NCHWtoNHWC,NHWCtoNCHW, GRNwithNHWC
 
 from cd_models.vmamba import *
 
 
-
-class UniRepLKNetBlock(nn.Module):
+class LKSSMBlock(nn.Module):
 
     def __init__(self,
                  dim,
@@ -46,7 +45,9 @@ class UniRepLKNetBlock(nn.Module):
         else:
             self.norm = get_bn(dim, use_sync_bn=use_sync_bn)
 
-        self.se = SEBlock(dim, dim // 4)
+        self.se = ChannelOperation(dim) #SEBlock(dim, dim // 4)
+
+        self.ssm = SS2D_v3(dim, dim)
 
         ffn_dim = int(ffn_factor * dim)
         self.pwconv1 = nn.Sequential(
@@ -69,10 +70,21 @@ class UniRepLKNetBlock(nn.Module):
                                   requires_grad=True) if (not deploy) and layer_scale_init_value is not None \
                                                          and layer_scale_init_value > 0 else None
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        
 
     def compute_residual(self, x):
-        y = self.se(self.norm(self.dwconv(x)))
-        y = self.pwconv2(self.act(self.pwconv1(y)))
+        #model 3
+        # y1 = self.norm(self.dwconv(x))
+        # y2 = self.se(x)
+        # y = y1 + y2
+        # y = self.pwconv2(self.act(self.pwconv1(y)))
+        #model 2
+        y1 = self.se(self.norm(self.dwconv(x)))
+        y2 = self.pwconv2(self.act(self.pwconv1(x)))
+        y = y1 + y2
+        # model 1
+        # y = self.se(self.norm(self.dwconv(x)))
+        # y = self.pwconv2(self.act(self.pwconv1(y)))
         if self.gamma is not None:
             y = self.gamma.view(1, -1, 1, 1) * y
         return self.drop_path(y)
@@ -80,7 +92,7 @@ class UniRepLKNetBlock(nn.Module):
     def forward(self, inputs):
 
         def _f(x):
-            return x + self.compute_residual(x)
+            return x + self.compute_residual(x) + self.ssm(x)
 
         if self.with_cp and inputs.requires_grad:
             out = checkpoint.checkpoint(_f, inputs)
@@ -125,6 +137,18 @@ class UniRepLKNetBlock(nn.Module):
             self.pwconv2 = nn.Sequential(new_linear, self.pwconv2[1])
 
 
+class ChannelOperation(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.Conv2d(dim, dim, 1, 1, 0, bias=False),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        return x * self.block(x)
+
 class SS2D_v3(nn.Module):
     def __init__(
         self,
@@ -154,10 +178,6 @@ class SS2D_v3(nn.Module):
 
         self.forward_core = partial(self.forward_corev2, force_fp32=False, SelectiveScan=SelectiveScanOflex)
         k_group = 4
-    
-        # self.conv2d = DilatedReparamBlock(d_model, 13)
-        # self.conv3 = nn.Sequential(nn.Conv2d(in_ch, d_inner, 1), nn.BatchNorm2d(d_inner), nn.ReLU())
-        # self.conv4 = nn.Sequential(nn.Conv2d(d_inner, out_ch, 1), nn.BatchNorm2d(out_ch), nn.ReLU())
 
         self.conv3 = nn.Conv2d(in_ch, d_inner, 1)
         self.conv4 = nn.Conv2d(d_inner, out_ch, 1)

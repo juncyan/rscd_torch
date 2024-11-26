@@ -9,7 +9,7 @@ from tqdm import tqdm
 from .val import evaluation
 from .predict import test
 from torch.optim.lr_scheduler import StepLR
-from .loss import loss, loss_lovasz
+
 from cd_models.scd_sam.util.loss import CrossEntropyLoss2d, weighted_BCE_logits, ChangeSimilarity
 
 
@@ -24,36 +24,25 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
     
     max_miou = 0.
     best_iter = 0
-    #early_stopping = Early_stopping(eps=2e-5,llen=10)
-    #criterion = SegmentationLosses(weight=None,cuda=True).build_loss("ce")
-
-    seg_criterion = CrossEntropyLoss2d(ignore_index=0) 
-    criterion_sc = ChangeSimilarity().to(args.device)
+    
+    criterion = CrossEntropyLoss2d()
 
     for epoch in range(args.iters):
         now = datetime.datetime.now()
         model.train()
         loss_record = []
 
-        for image1, image2, label1, label2, label, _ in tqdm(dataloader_train):
+        for image, label in tqdm(dataloader_train):
 
-            image1 = image1.to(args.device)
-            image2 = image2.to(args.device)
-            # labels_bn = (label1>0).unsqueeze(1).cuda().float()
-            label1 = label1.to(args.device).long()
-            label2 = label2.to(args.device).long()
+            image = image.to(args.device)
             label = label.to(args.device)
-            
-            out_change, outputs_A, outputs_B = model(image1, image2)
+
+            label = torch.argmax(label, 1)
+            preds = model(image)
             
             optimizer.zero_grad()  
-
-            # reduced_loss = loss_lovasz(out_change, outputs_A, outputs_B, label1, label2, label)
-            loss_seg = seg_criterion(outputs_A, label1) * 0.5 +  seg_criterion(outputs_B, label2) * 0.5
-            loss_sc = criterion_sc(outputs_A[:,1:], outputs_B[:,1:], label)
-            loss_bn =  weighted_BCE_logits(out_change, label)
+            reduced_loss = criterion(preds, label)
             
-            reduced_loss = loss_seg + loss_bn + loss_sc
             
             reduced_loss.backward() 
             optimizer.step()

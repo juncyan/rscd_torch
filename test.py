@@ -33,7 +33,7 @@ from cd_models.cgnet import CGNet
 # from cd_models.rsmamba import RSMamba_CD
 # from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
-from models.model import RepLKSSM_CD_v1, RepLKSSM_CD
+from models.model_cd import RepLKSSM_CD_v1, RepLKSSM_CD, RepLKSSM_CD_v2, RepLKSSM_CD_v3
 
 from core.bcdwork import Work
 
@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument('--device', type=int, default=1,
                         choices=[-1, 0, 1],
                         help='device (default: gpu:0)')
-    parser.add_argument('--dataset', type=str, default="S2Looking",
+    parser.add_argument('--dataset', type=str, default="GVLM_CD",
                         help='dataset name (default: LEVIR_CD)')
     parser.add_argument('--iters', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 100)')
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     args = parse_args()
     # model = build_STMambaSCD(args)
     # model = SSCDl(in_channels=3, num_classes=args.num_classes)
-    model = RepLKSSM_CD_v1()
+    model = RepLKSSM_CD_v3()
     w = Work(model, args)
     
     

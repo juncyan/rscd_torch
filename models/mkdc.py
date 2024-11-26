@@ -13,7 +13,7 @@ from timm.models.helpers import named_apply
 from cd_models.ultralight_unet import act_layer, _init_weights
 
 from .utils import ConvBNAct
-from .replk import SS2D_v3, DilatedReparamBlock
+from .replk import SS2D_v3, DilatedReparamBlock, LKSSMBlock
 
 
 class ChannelSSM(nn.Module):
@@ -76,10 +76,10 @@ class RepLKSSMLayer(nn.Module):
 
 
 class RepLKSSMBlock(nn.Module):
-    def __init__(self, in_channels, kernel_sizes=[7, 13] , activation='relu6'):
+    def __init__(self, in_channels, kernel_sizes=[13] , activation='relu6'):
         super().__init__()
         self.dwconvs = nn.ModuleList([
-            nn.Sequential(RepLKSSMLayer(in_channels, kernel_size, activation))
+            nn.Sequential(LKSSMBlock(in_channels, kernel_size))
             for kernel_size in kernel_sizes])
             
         self.init_weights('normal')
@@ -112,7 +112,7 @@ class CrossDimensionalGroupedAggregation(nn.Module):
             nn.Sigmoid()
         )
 
-        self.rlk = nn.Sequential(RepLKSSMLayer(F_int, 13, activation))
+        self.rlk = LKSSMBlock(F_int, 13)
 
         # self.ssm = SS2D_v3(F_int, F_int)
 
@@ -130,5 +130,5 @@ class CrossDimensionalGroupedAggregation(nn.Module):
         y1 = self.rlk(y)
         y2 = self.psi(y)
         y2 = y2 * x
-        y = y2 + y1
-        return y
+        res = y2 + y1
+        return res

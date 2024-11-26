@@ -33,7 +33,7 @@ from cd_models.cgnet import CGNet
 # from cd_models.rsmamba import RSMamba_CD
 # from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
-from models.model import RepLKSSM_CD_v1, RepLKSSM_CD, RepLKSSM_CD_v2
+from models.model_cd import RepLKSSM_CD_v1, RepLKSSM_CD, RepLKSSM_CD_v2
 
 from core.bcdwork import Work
 
@@ -51,7 +51,7 @@ def parse_args():
                         help='run save dir (default: ./output)')
     parser.add_argument('--img_size', type=int, default=512,
                         help='input image size (default: 256)')
-    parser.add_argument('--device', type=int, default=0,
+    parser.add_argument('--device', type=int, default=1,
                         choices=[-1, 0, 1],
                         help='device (default: gpu:0)')
     parser.add_argument('--dataset', type=str, default="SYSU_CD",
