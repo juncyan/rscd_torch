@@ -13,6 +13,13 @@ from .predict import test
 from .utils import get_scheduler
 import core.etc.lovasz_losses as L
 
+def BCEDiceLoss(inputs, targets):
+    bce = F.binary_cross_entropy(inputs, targets)
+    inter = (inputs * targets).sum()
+    eps = 1e-5
+    dice = (2 * inter + eps) / (inputs.sum() + targets.sum() + eps)
+    # print(bce.item(), inter.item(), inputs.sum().item(), dice.item())
+    return bce + 1 - dice
 
 def loss(logits,labels):
     # return nn.BCEWithLogitsLoss()(logits, lab)
@@ -84,7 +91,7 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
             
             image1 = image1.cuda(args.device)
             image2 = image2.cuda(args.device)
-            label = label.cuda(args.device).long()
+            label = label.cuda(args.device)
             
             pred = model(image1, image2)
            
@@ -96,7 +103,7 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
             #     reduced_loss = loss(pred, label)
             # print(pred.shape, label.shape)
 
-            ce_loss_1 = loss(pred, label)
+            ce_loss_1 = BCEDiceLoss(pred, label)
             reduced_loss = ce_loss_1
             # lovasz_loss = L.lovasz_softmax(F.softmax(pred, dim=1), label, ignore=255)
             # main_loss = ce_loss_1 + 0.75 * lovasz_loss

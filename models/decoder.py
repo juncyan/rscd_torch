@@ -6,8 +6,6 @@ from .utils import ConvBNAct
 from .replk import SS2D_v3, DilatedReparamBlock, LKSSMBlock
 from .ram import AdditiveTokenMixer
 
-
-
 class DTMS(nn.Module):
     #Dual token modeling SSM
     def __init__(self, in_ch, out_ch, channel_first=True):
@@ -77,7 +75,56 @@ class DTMS_v1(nn.Module):
         #         gmlp=False, use_checkpoint=use_checkpoint)
         self.conv = ConvBNAct(2*in_ch, out_ch, 1)
         self.cbr1 = ConvBNAct(3*out_ch, out_ch, 1)
-        # self.cbr2 = AdditiveTokenMixer(out_ch)
+        self.cbr2 = AdditiveTokenMixer(out_ch)
+        self.cbr3 = ConvBNAct(out_ch, out_ch, 3, padding=1)
+        
+        
+
+    def forward(self, x1, x2):
+        _device = x1.device
+        B, C, H, W = x1.size()
+        tp = torch.cat([x1, x2], dim=1)
+        tp = self.conv(tp)
+
+        t1 = torch.empty(B, 2*C, H, W).cuda(_device)
+        # t1 = torch.cat([x1, x2], dim=-1)
+        t1[:, 0::2, :, :] = x1
+        t1[:, 1::2, :, :] = x2
+        
+        t1 = self.ssm1(t1)  
+
+        t2 = torch.empty(B, C, H, 2*W).cuda(_device)
+        # x1 = self.cbr(x1)
+        t2[:, :, :, 0::2] = x1
+        t2[:, :, :, 1::2] = x2
+        # # t2 = t2.permute(0,2,3,1)
+        # t2 = torch.cat([x1, x2], 2)
+        t2 = self.ssm2(t2)
+        
+        t = torch.cat([t1, t2[:, :, :, :W], t2[:, :, :, W:]], dim=1).contiguous()
+        # t = self.ssm3(t)
+        # t = t.permute(0, 3, 1, 2)
+        t = self.cbr1(t)
+        t = self.cbr2(t)
+        t = self.cbr3(t)
+        
+        t = t + tp
+        
+        return t
+
+
+class DTMS_v2(nn.Module):
+    #Dual token modeling SSM
+    def __init__(self, in_ch, out_ch, kernels_size=13, channel_first=True):
+        super().__init__()
+        self.channel_first = channel_first
+        dim1 = 2*in_ch
+        self.ssm1 = SS2D_v3(dim1, out_ch)
+        self.ssm2 = SS2D_v3(in_ch, out_ch)
+        
+        self.conv = ConvBNAct(2*in_ch, out_ch, 1)
+        self.cbr1 = ConvBNAct(3*out_ch, out_ch, 1)
+        self.cbr2 = LKSSMBlock(out_ch, kernels_size)
         self.cbr3 = ConvBNAct(out_ch, out_ch, 3, padding=1)
 
     def forward(self, x1, x2):
@@ -105,7 +152,7 @@ class DTMS_v1(nn.Module):
         # t = self.ssm3(t)
         # t = t.permute(0, 3, 1, 2)
         t = self.cbr1(t)
-        # t = self.cbr2(t)
+        t = self.cbr2(t)
         t = self.cbr3(t)
         
         t = t + tp

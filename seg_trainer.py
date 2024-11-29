@@ -9,6 +9,9 @@ import os
 
 # 模型导入
 from cd_models.ultralight_unet import UltraLightUNet
+# from cd_models.unet import net_factory
+
+from models.model_seg import RepLKSSM_Seg
 from core.segwork import Work
 
 # dataset_name = "GVLM_CD"
@@ -46,8 +49,8 @@ def parse_args():
                         help='w-decay (default: 5e-4)')
     parser.add_argument('--num_workers', type=int, default=16,
                         help='num_workers (default: 16)')
-    parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_tiny_224_0229flex.yaml',
-                        help='train mamba')
+    # parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_tiny_224_0229flex.yaml',
+    #                     help='train mamba')
     parser.add_argument(
         "--opts",
         help="Modify config options by adding 'KEY VALUE' pairs. ",
@@ -62,7 +65,9 @@ if __name__ == "__main__":
     # 代码运行预处理
     print("main")
     args = parse_args()
-    model = UltraLightUNet(num_classes=args.num_classes)
+    # model = UltraLightUNet(num_classes=args.num_classes)
+    model = RepLKSSM_Seg(args.num_classes)
+    # model = net_factory('mambau', 3, args.num_classes, img_size=args.img_size)
     w = Work(model, args)
     
     

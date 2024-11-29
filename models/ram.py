@@ -20,7 +20,7 @@ sys.path.append("..")
 from mmseg.models.builder import BACKBONES as seg_BACKBONES
 
 from .utils import ConvBNAct
-from .replk import SS2D_v3, DilatedReparamBlock
+from .replk import SS2D_v3, DilatedReparamBlock, LKSSMBlock
 # from mmcv._runner import _load_checkpoint
 
 # ======================================================================================================================

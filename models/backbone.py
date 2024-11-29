@@ -14,7 +14,7 @@ from .replk import LKSSMBlock
 
 depths=(3, 3, 27, 3)
 dims=(96, 192, 384, 768)
-cfg = {"depths":[2,2,6,9],
+cfg = {"depths":[2,2,4,2],
        "dims":[96, 192, 384, 768],
        "kernels":[11,13,13,11],
        "down_ratio":[4,2,2,2]}
@@ -31,7 +31,8 @@ class LKSSMNet(nn.Module):
         in_ch = 3
         self.opt = nn.ModuleList()
         for i, num_layer in enumerate(depths):
-            downsample = nn.Conv2d(in_ch, dims[i], down_ratio[i] + 1, stride=down_ratio[i], padding=down_ratio[i]//2)
+            downsample = nn.Sequential(nn.Conv2d(in_ch, dims[i], 1),nn.BatchNorm2d(dims[i]), nn.ReLU6(),
+                                       nn.Conv2d(dims[i], dims[i], down_ratio[i] + 1, stride=down_ratio[i], padding=down_ratio[i]//2))
             in_ch = dims[i]
             sub_layer = nn.Sequential()
             sub_layer.append(downsample)
@@ -40,7 +41,7 @@ class LKSSMNet(nn.Module):
             
             self.opt.append(sub_layer)
         
-        self._init_weights()
+        # self._init_weights()
         
     def forward(self, x):
         res = []

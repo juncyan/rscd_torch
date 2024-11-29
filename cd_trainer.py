@@ -33,7 +33,9 @@ from cd_models.cgnet import CGNet
 # from cd_models.rsmamba import RSMamba_CD
 # from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
-from models.model_cd import RepLKSSM_CD_v1, RepLKSSM_CD, RepLKSSM_CD_v2
+from cd_models.dgma2net import DGMAANet
+from models.model_cd import RLM_CD_v2
+from models.lkssm_cd_v0 import RepLKSSM_CD_v0
 
 from core.bcdwork import Work
 
@@ -64,7 +66,7 @@ def parse_args():
                         help='num classes (default: 2)')
     parser.add_argument('--batch_size', type=int, default=16,
                         help='batch_size (default: 8)')
-    parser.add_argument('--lr', type=float, default=2.8e-4, metavar='LR',
+    parser.add_argument('--lr', type=float, default=4.8e-4, metavar='LR',
                         help='learning rate (default: 1e-4)')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                         help='momentum (default: 0.9)')
@@ -89,8 +91,8 @@ if __name__ == "__main__":
     print("main")
     args = parse_args()
     # model = build_STMambaSCD(args)
-    # model = SSCDl(in_channels=3, num_classes=args.num_classes)
-    model = RepLKSSM_CD_v2()
+    # model = DGMAANet(3,2)
+    model = RLM_CD_v2()
     w = Work(model, args)
     
     

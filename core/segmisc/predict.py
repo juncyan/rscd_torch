@@ -155,7 +155,7 @@ def test(model, dataloader_test, args=None):
         os.makedirs(img_dir)
 
     logger = load_logger(f"{img_dir}/prediction.log")
-    logger.info(f"test {args.args.dataset} on {args.model}")
+    logger.info(f"test {args.dataset} on {args.model}")
    
     color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[0,0,128]])
 
@@ -203,7 +203,7 @@ def test(model, dataloader_test, args=None):
         
     _,c,w,h = image.shape
     x= torch.rand([1,c,w,h]).cuda(args.device)
-    flops, params = profile(model, [x,x])
+    flops, params = profile(model, [x])
     
     logger.info(f"[PREDICT] model flops is {int(flops)}, params is {int(params)}")
 

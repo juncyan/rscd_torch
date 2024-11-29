@@ -45,9 +45,9 @@ class LKSSMBlock(nn.Module):
         else:
             self.norm = get_bn(dim, use_sync_bn=use_sync_bn)
 
-        self.se = ChannelOperation(dim) #SEBlock(dim, dim // 4)
+        self.se = SEBlock(dim, dim // 4) #ChannelOperation(dim)#
 
-        self.ssm = SS2D_v3(dim, dim)
+        # self.ss2d = SS2D_v3(dim, dim)
 
         ffn_dim = int(ffn_factor * dim)
         self.pwconv1 = nn.Sequential(
@@ -74,25 +74,30 @@ class LKSSMBlock(nn.Module):
 
     def compute_residual(self, x):
         #model 3
-        # y1 = self.norm(self.dwconv(x))
+        # y = self.se(self.norm(self.dwconv(x)))
         # y2 = self.se(x)
         # y = y1 + y2
         # y = self.pwconv2(self.act(self.pwconv1(y)))
         #model 2
-        y1 = self.se(self.norm(self.dwconv(x)))
-        y2 = self.pwconv2(self.act(self.pwconv1(x)))
-        y = y1 + y2
+        # y1 = self.se(self.norm(self.dwconv(x)))
+        # y2 = self.pwconv2(self.act(self.pwconv1(x)))
+        # y = y1 + y2
         # model 1
-        # y = self.se(self.norm(self.dwconv(x)))
-        # y = self.pwconv2(self.act(self.pwconv1(y)))
+        y = self.se(self.norm(self.dwconv(x)))
+        y = self.pwconv2(self.act(self.pwconv1(y)))
         if self.gamma is not None:
             y = self.gamma.view(1, -1, 1, 1) * y
         return self.drop_path(y)
+    
+    # def ssm(self, x):
+    #     y = x + self.ss2d(x)
+    #     return y
 
     def forward(self, inputs):
 
         def _f(x):
-            return x + self.compute_residual(x) + self.ssm(x)
+            # return self.compute_residual(x)  + self.ssm(x)
+            return x + self.compute_residual(x) 
 
         if self.with_cp and inputs.requires_grad:
             out = checkpoint.checkpoint(_f, inputs)
@@ -368,3 +373,25 @@ class DilatedReparamBlock(nn.Module):
                 self.__delattr__('dil_conv_k{}_{}'.format(k, r))
                 self.__delattr__('dil_bn_k{}_{}'.format(k, r))
 
+
+class SEBlock(nn.Module):
+    """
+    Squeeze-and-Excitation Block proposed in SENet (https://arxiv.org/abs/1709.01507)
+    We assume the inputs to this layer are (N, C, H, W)
+    """
+    def __init__(self, input_channels, internal_neurons):
+        super(SEBlock, self).__init__()
+        self.down = nn.Conv2d(in_channels=input_channels, out_channels=internal_neurons,
+                              kernel_size=1, stride=1, bias=True)
+        self.up = nn.Conv2d(in_channels=internal_neurons, out_channels=input_channels,
+                            kernel_size=1, stride=1, bias=True)
+        self.input_channels = input_channels
+        self.nonlinear = nn.ReLU(inplace=True)
+
+    def forward(self, inputs):
+        x = F.adaptive_avg_pool2d(inputs, output_size=(1, 1))
+        x = self.down(x)
+        x = self.nonlinear(x)
+        x = self.up(x)
+        x = F.sigmoid(x)
+        return inputs * x.view(-1, self.input_channels, 1, 1)
