@@ -27,16 +27,17 @@ class RepLKSSM_Seg(nn.Module):
         # self.encoder.eval()
         # self.encoder.reparameterize_unireplknet()
 
-        self.conv1 = nn.Sequential(nn.Conv2d(768, 128, 1), nn.BatchNorm2d(128), nn.ReLU(), 
-                                   RepLKSSMBlock(128),
-                                   nn.Conv2d(128, 64, 1), nn.BatchNorm2d(64), nn.ReLU())
+        self.conv1 = nn.Sequential(nn.Conv2d(768, 128, 1), nn.BatchNorm2d(128), nn.ReLU())
+        self.lks1 = RepLKSSMBlock(128)
+        self.conv11 = nn.Sequential(nn.Conv2d(128, 64, 1), nn.BatchNorm2d(64), nn.ReLU())
+
         self.conv2 = nn.Sequential(nn.Conv2d(192, 64, 1), nn.BatchNorm2d(64), nn.ReLU())
 
         self.df = CrossDimensionalGroupedAggregation(64,64,64)
-        self.conv3 = RepLKSSMBlock(64)
+        self.lks2 = RepLKSSMBlock(64)
 
-        self.cls = nn.Sequential(ChannelSSM(64,64),
-                                 nn.Conv2d(64, num_cls, 7, padding=3))
+        # self.lks3 = RepLKSSMBlock(64)
+        self.cls = nn.Sequential(ChannelSSM(64,64),nn.Conv2d(64, num_cls, 7, padding=3))
 
         # for param in self.encoder.parameters():
         #     param.requires_grad = False
@@ -51,15 +52,18 @@ class RepLKSSM_Seg(nn.Module):
         
         f4, f2 = f1_list[3], f1_list[1]
         f4 = self.conv1(f4)
+        f4 = self.lks1(f4)
+        f4 = self.conv11(f4)
+        f4 = F.interpolate(f4, f2.shape[-2:], mode='bilinear')
+
         f2 = self.conv2(f2)
     
-        f4 = F.interpolate(f4, f2.shape[-2:], mode='bilinear')
-        
         f = self.df(f4, f2)
-        f = self.conv3(f)
+        f = self.lks2(f)
         f = F.interpolate(f, scale_factor=8, mode='bilinear')
-        
+        # f = self.lks3(f)
         f = self.cls(f)
+        # f = F.softmax(f)
         return f
 
 

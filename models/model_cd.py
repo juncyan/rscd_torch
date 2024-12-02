@@ -24,15 +24,17 @@ class RLM_CD_v2(nn.Module):
         self.encoder.eval()
         self.encoder.reparameterize_unireplknet()
 
-        self.bf4 = DTMS_v1(768, 64)
-        self.bf2 = DTMS_v1(192, 64)
+        self.bf4 = DTMS_v2(768, 64)
+        self.bf2 = DTMS_v2(192, 64)
 
         self.up1 = RepLKSSMBlock(64)
+        # self.conv1 = nn.Sequential(nn.Conv2d(64,64,1), nn.BatchNorm2d(64), nn.ReLU(), nn.Conv2d(64,64,3,1,1), nn.BatchNorm2d(64), nn.ReLU())
         self.up2 = RepLKSSMBlock(64)
 
         self.df = CrossDimensionalGroupedAggregation(64,64,64)
 
-        self.cls = nn.Sequential(nn.Conv2d(64, 2, 7, padding=3), nn.Sigmoid())
+        # self.conv2 = nn.Sequential(nn.Conv2d(64,64,3,1,1), nn.BatchNorm2d(64), nn.ReLU())
+        self.cls = nn.Conv2d(64, 2, 7, padding=3)
         # nn.Sequential(ChannelSSM(64,64),
                                 #  nn.Conv2d(64, 2, 7, padding=3))
 
@@ -50,12 +52,13 @@ class RLM_CD_v2(nn.Module):
         f2 = self.bf2(p2, b2).contiguous()
         
         f4 = self.up1(f4)
+        # f4 = self.conv1(f4)
         f4 = F.interpolate(f4, f2.shape[-2:], mode='bilinear')
         f = self.df(f4, f2)
         f = self.up2(f)
         f = F.interpolate(f, scale_factor=8, mode='bilinear')
-        
-        f = self.cls(f)
+        # f = self.conv2(f)
+        f = F.sigmoid(self.cls(f))
         return f
 
 
@@ -69,9 +72,16 @@ class RLM_CD_v1(nn.Module):
         self.bf4 = DTMS_v1(768, 64)
         self.bf2 = DTMS_v1(192, 64)
 
-        self.decoder = Decoder_v1()
+        self.up1 = RepLKSSMBlock(64)
+        # self.conv1 = nn.Sequential(nn.Conv2d(64,64,1), nn.BatchNorm2d(64), nn.ReLU(), nn.Conv2d(64,64,3,1,1), nn.BatchNorm2d(64), nn.ReLU())
+        self.up2 = RepLKSSMBlock(64)
 
-        self.cls = nn.Conv2d(64,2, 7, padding=3)
+        self.df = CrossDimensionalGroupedAggregation(64,64,64)
+
+        # self.conv2 = nn.Sequential(nn.Conv2d(64,64,3,1,1), nn.BatchNorm2d(64), nn.ReLU())
+        self.cls = nn.Conv2d(64, 2, 7, padding=3)
+        # nn.Sequential(ChannelSSM(64,64),
+                                #  nn.Conv2d(64, 2, 7, padding=3))
 
         for param in self.encoder.parameters():
             param.requires_grad = False
@@ -86,8 +96,13 @@ class RLM_CD_v1(nn.Module):
         f4 = self.bf4(p4, b4).contiguous()
         f2 = self.bf2(p2, b2).contiguous()
         
-        f = self.decoder(f2, f4)
-        
-        f = self.cls(f)
+        f4 = self.up1(f4)
+        # f4 = self.conv1(f4)
+        f4 = F.interpolate(f4, f2.shape[-2:], mode='bilinear')
+        f = self.df(f4, f2)
+        f = self.up2(f)
+        f = F.interpolate(f, scale_factor=8, mode='bilinear')
+        # f = self.conv2(f)
+        f = F.sigmoid(self.cls(f))
         return f
     

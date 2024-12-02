@@ -9,7 +9,6 @@ from cd_models.vmamba import *
 
 
 class LKSSMBlock(nn.Module):
-
     def __init__(self,
                  dim,
                  kernel_size,
@@ -45,9 +44,8 @@ class LKSSMBlock(nn.Module):
         else:
             self.norm = get_bn(dim, use_sync_bn=use_sync_bn)
 
-        self.se = SEBlock(dim, dim // 4) #ChannelOperation(dim)#
-
-        # self.ss2d = SS2D_v3(dim, dim)
+        self.se = ChannelOperation(dim)#SEBlock(dim, dim // 4)
+        self.ssm = SS2D_v3(dim, dim)
 
         ffn_dim = int(ffn_factor * dim)
         self.pwconv1 = nn.Sequential(
@@ -70,33 +68,23 @@ class LKSSMBlock(nn.Module):
                                   requires_grad=True) if (not deploy) and layer_scale_init_value is not None \
                                                          and layer_scale_init_value > 0 else None
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
-        
 
     def compute_residual(self, x):
-        #model 3
-        # y = self.se(self.norm(self.dwconv(x)))
-        # y2 = self.se(x)
-        # y = y1 + y2
+        # MODE 1
+        # y = self.se(self.norm(self.dwconv(x))) + self.ssm(x)
         # y = self.pwconv2(self.act(self.pwconv1(y)))
-        #model 2
-        # y1 = self.se(self.norm(self.dwconv(x)))
-        # y2 = self.pwconv2(self.act(self.pwconv1(x)))
-        # y = y1 + y2
-        # model 1
+        # MODE 2
         y = self.se(self.norm(self.dwconv(x)))
         y = self.pwconv2(self.act(self.pwconv1(y)))
+        y = y + self.ssm(x)
+        
         if self.gamma is not None:
             y = self.gamma.view(1, -1, 1, 1) * y
         return self.drop_path(y)
-    
-    # def ssm(self, x):
-    #     y = x + self.ss2d(x)
-    #     return y
 
     def forward(self, inputs):
 
         def _f(x):
-            # return self.compute_residual(x)  + self.ssm(x)
             return x + self.compute_residual(x) 
 
         if self.with_cp and inputs.requires_grad:
@@ -295,6 +283,150 @@ class SS2D_v3(nn.Module):
         out = z + y
         out = self.conv4(out)
         return out
+
+
+class SS2D_v4(nn.Module):
+    def __init__(
+        self,
+        # basic dims ===========
+        in_ch=96,
+        out_ch=96,
+        d_state=16,
+        ssm_ratio=2.0,
+        dt_rank="auto",
+        # dwconv ===============
+        # dt init ==============
+        dt_min=0.001,
+        dt_max=0.1,
+        dt_init="random",
+        dt_scale=1.0,
+        dt_init_floor=1e-4,
+        channel_first=True,
+        # ======================
+        **kwargs,
+    ):
+        super().__init__()
+        d_model = in_ch
+        d_inner = int(ssm_ratio * d_model)
+        dt_rank = math.ceil(d_model / 16) if dt_rank == "auto" else dt_rank
+        self.channel_first = channel_first
+    
+
+        self.forward_core = partial(self.forward_corev2, force_fp32=False, SelectiveScan=SelectiveScanOflex)
+        k_group = 4
+
+        self.conv3 = nn.Sequential(nn.Conv2d(in_ch, in_ch, 3, 1, 1, groups=in_ch),nn.ReLU(),nn.Conv2d(in_ch, d_inner, 1))
+        self.conv4 = nn.Conv2d(d_inner, out_ch, 1)
+
+        if channel_first:
+            self.out_norm_shape = "v1"
+            self.out_norm = LayerNorm2d(d_inner)
+        else:
+            self.out_norm_shape = "v0"
+            self.out_norm = nn.LayerNorm(d_inner)
+        # x proj ============================
+        self.x_proj = [
+            nn.Linear(d_inner, (dt_rank + d_state * 2), bias=False)
+            for _ in range(k_group)
+        ]
+        self.x_proj_weight = nn.Parameter(torch.stack([t.weight for t in self.x_proj], dim=0)) # (K, N, inner)
+        del self.x_proj
+        
+        # dt proj ============================
+        self.dt_projs = [
+            self.dt_init(dt_rank, d_inner, dt_scale, dt_init, dt_min, dt_max, dt_init_floor)
+            for _ in range(k_group)
+        ]
+        self.dt_projs_weight = nn.Parameter(torch.stack([t.weight for t in self.dt_projs], dim=0)) # (K, inner, rank)
+        self.dt_projs_bias = nn.Parameter(torch.stack([t.bias for t in self.dt_projs], dim=0)) # (K, inner)
+        del self.dt_projs
+        
+        # A, D =======================================
+        self.A_logs = self.A_log_init(d_state, d_inner, copies=k_group, merge=True) # (K * D, N)
+        self.Ds = self.D_init(d_inner, copies=k_group, merge=True) # (K * D)
+        
+
+    @staticmethod
+    def dt_init(dt_rank, d_inner, dt_scale=1.0, dt_init="random", dt_min=0.001, dt_max=0.1, dt_init_floor=1e-4):
+        dt_proj = nn.Linear(dt_rank, d_inner, bias=True)
+
+        # Initialize special dt projection to preserve variance at initialization
+        dt_init_std = dt_rank**-0.5 * dt_scale
+        if dt_init == "constant":
+            nn.init.constant_(dt_proj.weight, dt_init_std)
+        elif dt_init == "random":
+            nn.init.uniform_(dt_proj.weight, -dt_init_std, dt_init_std)
+        else:
+            raise NotImplementedError
+
+        # Initialize dt bias so that F.softplus(dt_bias) is between dt_min and dt_max
+        dt = torch.exp(
+            torch.rand(d_inner) * (math.log(dt_max) - math.log(dt_min))
+            + math.log(dt_min)
+        ).clamp(min=dt_init_floor)
+        # Inverse of softplus: https://github.com/pytorch/pytorch/issues/72759
+        inv_dt = dt + torch.log(-torch.expm1(-dt))
+        with torch.no_grad():
+            dt_proj.bias.copy_(inv_dt)
+        # Our initialization would set all Linear.bias to zero, need to mark this one as _no_reinit
+        # dt_proj.bias._no_reinit = True
+        
+        return dt_proj
+
+    @staticmethod
+    def A_log_init(d_state, d_inner, copies=-1, device=None, merge=True):
+        # S4D real initialization
+        A = repeat(
+            torch.arange(1, d_state + 1, dtype=torch.float32, device=device),
+            "n -> d n",
+            d=d_inner,
+        ).contiguous()
+        A_log = torch.log(A)  # Keep A_log in fp32
+        if copies > 0:
+            A_log = repeat(A_log, "d n -> r d n", r=copies)
+            if merge:
+                A_log = A_log.flatten(0, 1)
+        A_log = nn.Parameter(A_log)
+        A_log._no_weight_decay = True
+        return A_log
+
+    @staticmethod
+    def D_init(d_inner, copies=-1, device=None, merge=True):
+        # D "skip" parameter
+        D = torch.ones(d_inner, device=device)
+        if copies > 0:
+            D = repeat(D, "n1 -> r n1", r=copies)
+            if merge:
+                D = D.flatten(0, 1)
+        D = nn.Parameter(D)  # Keep in fp32
+        D._no_weight_decay = True
+        return D
+    
+    def forward_corev2(self, x: torch.Tensor, cross_selective_scan=cross_selective_scan, **kwargs):
+        x_proj_weight = self.x_proj_weight
+        dt_projs_weight = self.dt_projs_weight
+        dt_projs_bias = self.dt_projs_bias
+        A_logs = self.A_logs
+        Ds = self.Ds
+        out_norm = getattr(self, "out_norm", None)
+        out_norm_shape = getattr(self, "out_norm_shape", "v0")
+
+        return cross_selective_scan(
+            x, x_proj_weight, None, dt_projs_weight, dt_projs_bias,
+            A_logs, Ds, delta_softplus=True,
+            out_norm=out_norm,
+            channel_first=self.channel_first,
+            out_norm_shape=out_norm_shape,
+            **kwargs,
+        )
+
+    def forward(self, x: torch.Tensor):
+        y = self.conv3(x)
+        z = self.forward_core(y)
+        out = z + y
+        out = self.conv4(out)
+        return out
+
 
 
 class DilatedReparamBlock(nn.Module):

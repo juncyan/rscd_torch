@@ -39,7 +39,7 @@ def parse_args():
                         help='en_load_edge False')
     parser.add_argument('--num_classes', type=int, default=5,
                         help='num classes (default: 7)')
-    parser.add_argument('--batch_size', type=int, default=4,
+    parser.add_argument('--batch_size', type=int, default=2,
                         help='batch_size (default: 2)')
     parser.add_argument('--lr', type=float, default=0.00035, metavar='LR',
                         help='learning rate (default: 1e-4)')

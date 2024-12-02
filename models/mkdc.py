@@ -69,7 +69,7 @@ from timm.models.helpers import named_apply
 from cd_models.ultralight_unet import act_layer, _init_weights
 
 from .utils import ConvBNAct
-from .replk import SS2D_v3, DilatedReparamBlock
+from .replk import SS2D_v3, DilatedReparamBlock, LKSSMBlock, SS2D_v4
 
 
 class ChannelSSM(nn.Module):
@@ -112,6 +112,26 @@ class AdditiveTokenMixer(nn.Module):
         # out = self.proj_drop(out)
         return out
 
+class AdditiveTokenMixer_L(nn.Module):
+    def __init__(self, dim=512):
+        super().__init__()
+       
+        self.qkv = nn.Conv2d(dim, 3 * dim, 1, stride=1, padding=0, bias=False)
+        self.oper_q = nn.Conv2d(dim, dim, 3, 1, 1, groups=dim)
+        self.oper_k = nn.Conv2d(dim, dim, 3, 1, 1, groups=dim)
+        self.dwc = nn.Conv2d(dim, dim, 3, 1, 1, groups=dim)
+
+        self.proj = ConvBNAct(dim, dim, 3, 1, padding=1)
+        self.proj_drop = nn.Dropout(0.)
+
+    def forward(self, x):
+        q, k, v = self.qkv(x).chunk(3, dim=1)
+        q = self.oper_q(q)
+        k = self.oper_k(k)
+        out = self.proj(self.dwc(q + k) * v)
+        out = self.proj_drop(out)
+        return out
+
 
 class RepLKSSMLayer(nn.Module):
     def __init__(self, in_channels, kernel_size=13, activation='relu6'):
@@ -135,7 +155,8 @@ class RepLKSSMBlock(nn.Module):
     def __init__(self, in_channels, kernel_sizes=[7, 13] , activation='relu6'):
         super().__init__()
         self.dwconvs = nn.ModuleList([
-            nn.Sequential(RepLKSSMLayer(in_channels, kernel_size, activation))
+            # nn.Sequential(RepLKSSMLayer(in_channels, kernel_size, activation))
+            LKSSMBlock(in_channels, kernel_size)
             for kernel_size in kernel_sizes])
             
         self.init_weights('normal')
@@ -168,9 +189,10 @@ class CrossDimensionalGroupedAggregation(nn.Module):
             nn.Sigmoid()
         )
 
-        self.rlk = nn.Sequential(RepLKSSMLayer(F_int, 13, activation))
+        self.rlk = LKSSMBlock(F_int, 13)#nn.Sequential(RepLKSSMLayer(F_int, 13, activation))
 
         # self.ssm = SS2D_v3(F_int, F_int)
+        self.att = AdditiveTokenMixer_L(F_int)
 
         self.init_weights('normal')
     
@@ -187,4 +209,5 @@ class CrossDimensionalGroupedAggregation(nn.Module):
         y2 = self.psi(y)
         y2 = y2 * x
         y = y2 + y1
+        y = self.att(y)
         return y

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from .utils import ConvBNAct
 # from cd_models.vmamba import VSSM, LayerNorm2d, VSSBlock, Permute
 from .replk import SS2D_v3, DilatedReparamBlock, LKSSMBlock
-from .ram import AdditiveTokenMixer
+from .ram import AdditiveTokenMixer, AdditiveTokenMixer_v2
 
 class DTMS(nn.Module):
     #Dual token modeling SSM
@@ -124,7 +124,7 @@ class DTMS_v2(nn.Module):
         
         self.conv = ConvBNAct(2*in_ch, out_ch, 1)
         self.cbr1 = ConvBNAct(3*out_ch, out_ch, 1)
-        self.cbr2 = LKSSMBlock(out_ch, kernels_size)
+        self.cbr2 = LKSSMBlock(out_ch, kernels_size)#AdditiveTokenMixer_v2(out_ch, kernels_size)
         self.cbr3 = ConvBNAct(out_ch, out_ch, 3, padding=1)
 
     def forward(self, x1, x2):

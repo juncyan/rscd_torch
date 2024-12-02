@@ -1,5 +1,5 @@
 from .vmamba import *
-from .mamba_backbone import Backbone_VSSM
+from .mamba_backbone import Backbone_VSSM, build_VSSM
 # import os
 # from functools import partial
 

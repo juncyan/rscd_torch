@@ -53,10 +53,10 @@ def parse_args():
                         help='run save dir (default: ./output)')
     parser.add_argument('--img_size', type=int, default=512,
                         help='input image size (default: 256)')
-    parser.add_argument('--device', type=int, default=1,
+    parser.add_argument('--device', type=int, default=0,
                         choices=[-1, 0, 1],
                         help='device (default: gpu:0)')
-    parser.add_argument('--dataset', type=str, default="SYSU_CD",
+    parser.add_argument('--dataset', type=str, default="GVLM_CD",
                         help='dataset name (default: LEVIR_CD)')
     parser.add_argument('--iters', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 100)')
@@ -74,8 +74,8 @@ def parse_args():
                         help='w-decay (default: 5e-4)')
     parser.add_argument('--num_workers', type=int, default=16,
                         help='num_workers (default: 16)')
-    parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_tiny_224_0229flex.yaml',
-                        help='train mamba')
+    # parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_tiny_224_0229flex.yaml',
+    #                     help='train mamba')
     parser.add_argument(
         "--opts",
         help="Modify config options by adding 'KEY VALUE' pairs. ",

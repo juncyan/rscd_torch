@@ -115,6 +115,22 @@ class ChannelSSM(nn.Module):
         y = x * (y1 + y2)
         return y
 
+class ChannelAttention(nn.Module):
+    def __init__(self, dim, out_channel=None):
+        super().__init__()
+        out_channel = out_channel if out_channel else dim
+        self.avg = nn.AdaptiveAvgPool2d((1, 1))
+        self.cbr = ConvBNAct(dim, out_channel, bias=False, act="sigmoid")
+        self.ssm = ConvBNAct(dim, out_channel, 3,1,padding=1)
+
+    def forward(self, x):
+        y1 = self.avg(x)
+        y1 = self.cbr(y1)
+        y2 = self.ssm(x)
+        y = x * (y1 + y2)
+        return y
+
+
 class LocalIntegration(nn.Module):
     """
     """
@@ -146,6 +162,30 @@ class AdditiveTokenMixer(nn.Module):
         self.dwc = nn.Conv2d(dim, dim, 3, 1, 1, groups=dim)
 
         self.proj = ChannelSSM(dim, dim)#ConvBNAct(dim, dim, 3, 1, padding=1)
+        # self.proj_drop = nn.Dropout(0.)
+
+    def forward(self, x):
+        y = self.replk(x)
+        q, k, v = self.qkv(y).chunk(3, dim=1)
+        q = self.oper_q(q)
+        k = self.oper_k(k)
+        out = self.proj(self.dwc(q + k) * v)
+        # out = self.proj_drop(out)
+        return out
+
+class AdditiveTokenMixer_v2(nn.Module):
+    """
+    改变了proj函数的输入，不对q+k卷积，而是对融合之后的结果proj
+    """
+    def __init__(self, dim=512):
+        super().__init__()
+        self.replk = DilatedReparamBlock(dim, 13)
+        self.qkv = nn.Conv2d(dim, 3 * dim, 1, stride=1, padding=0, bias=False)
+        self.oper_q = SS2D_v3(dim, dim) #nn.Conv2d(dim, dim, 3, 1, 1, groups=dim)
+        self.oper_k = SS2D_v3(dim, dim) #nn.Conv2d(dim, dim, 3, 1, 1, groups=dim)
+        self.dwc = nn.Conv2d(dim, dim, 3, 1, 1, groups=dim)
+
+        self.proj = ChannelAttention(dim, dim)#ConvBNAct(dim, dim, 3, 1, padding=1)
         # self.proj_drop = nn.Dropout(0.)
 
     def forward(self, x):
