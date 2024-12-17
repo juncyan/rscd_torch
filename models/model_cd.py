@@ -11,10 +11,9 @@ from timm.models.helpers import named_apply
 from cd_models.ultralight_unet import act_layer, _init_weights
 
 from .backbone import LKSSMNet
-from .decoder import DTMS, UpConvBlock, Decoder, DTMS_v1, Decoder_v1, DTMS_v2
+from .decoder import DTMS, UpConvBlock, Decoder, DTMS_v1, Decoder_v1, DTMS_v2, DTMS_v3
 from .replk import SS2D_v3
-from .ram import ChannelSSM, ConvBNAct
-from .mkdc import CrossDimensionalGroupedAggregation, RepLKSSMBlock
+from .mkdc import CrossDimensionalGroupedAggregation, RepLKSSMBlock, RepLKSSMBlock_v2, CrossDimensionalGroupedAggregation_v2
 
 # RepLK Convolutional Additive Mamba for Land Cover Fain-graind Understanding
 class RLM_CD_v2(nn.Module):
@@ -62,21 +61,21 @@ class RLM_CD_v2(nn.Module):
         return f
 
 
-class RLM_CD_v1(nn.Module):
+class RLM_CD_v3(nn.Module):
     def __init__(self, num_cls=2) -> None:
         super().__init__()
         self.encoder = unireplknet_s()
         self.encoder.eval()
         self.encoder.reparameterize_unireplknet()
 
-        self.bf4 = DTMS_v1(768, 64)
-        self.bf2 = DTMS_v1(192, 64)
+        self.bf4 = DTMS_v3(768, 64)
+        self.bf2 = DTMS_v3(192, 64)
 
-        self.up1 = RepLKSSMBlock(64)
+        self.up1 = RepLKSSMBlock_v2(64)
         # self.conv1 = nn.Sequential(nn.Conv2d(64,64,1), nn.BatchNorm2d(64), nn.ReLU(), nn.Conv2d(64,64,3,1,1), nn.BatchNorm2d(64), nn.ReLU())
-        self.up2 = RepLKSSMBlock(64)
+        self.up2 = RepLKSSMBlock_v2(64)
 
-        self.df = CrossDimensionalGroupedAggregation(64,64,64)
+        self.df = CrossDimensionalGroupedAggregation_v2(64,64,64)
 
         # self.conv2 = nn.Sequential(nn.Conv2d(64,64,3,1,1), nn.BatchNorm2d(64), nn.ReLU())
         self.cls = nn.Conv2d(64, 2, 7, padding=3)
@@ -105,4 +104,3 @@ class RLM_CD_v1(nn.Module):
         # f = self.conv2(f)
         f = F.sigmoid(self.cls(f))
         return f
-    

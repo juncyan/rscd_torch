@@ -32,9 +32,9 @@ class Work():
         train(model, self.train_loader, self.val_loader, self.test_loader, self.args)
 
     def dataloader(self, datasetlist=['train', 'val', 'test']):
-        train_data = MusReader(self.dataset_path, datasetlist[0])
-        val_data = MusReader(self.dataset_path, datasetlist[1])
-        test_data = MusReader(self.dataset_path, datasetlist[1])
+        train_data = SCDReader(self.dataset_path, datasetlist[0])
+        val_data = SCDReader(self.dataset_path, datasetlist[2])
+        test_data = SCDReader(self.dataset_path, datasetlist[2])
 
         self.args.traindata_num = train_data.__len__()
         self.args.val_num = val_data.__len__()
@@ -46,7 +46,7 @@ class Work():
         self.train_loader = DataLoader(dataset=train_data, batch_size=self.args.batch_size, num_workers=self.args.num_workers,
                                     shuffle=True, drop_last=True)
         self.test_loader = DataLoader(dataset=test_data, batch_size=self.args.batch_size, num_workers=self.args.num_workers,
-                                    shuffle=True, drop_last=True)
+                                    shuffle=False, drop_last=True)
         
     def _seed_init(self, seed=32767):
         random.seed(seed)

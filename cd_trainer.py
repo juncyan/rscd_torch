@@ -34,7 +34,7 @@ from cd_models.cgnet import CGNet
 # from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
 from cd_models.dgma2net import DGMAANet
-from models.model_cd import RLM_CD_v2
+from models.model_cd import RLM_CD_v2, RLM_CD_v3
 from models.lkssm_cd_v0 import RepLKSSM_CD_v0
 
 from core.bcdwork import Work
@@ -66,7 +66,7 @@ def parse_args():
                         help='num classes (default: 2)')
     parser.add_argument('--batch_size', type=int, default=16,
                         help='batch_size (default: 8)')
-    parser.add_argument('--lr', type=float, default=4.8e-4, metavar='LR',
+    parser.add_argument('--lr', type=float, default=2.8e-4, metavar='LR',
                         help='learning rate (default: 1e-4)')
     parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                         help='momentum (default: 0.9)')
@@ -76,6 +76,7 @@ def parse_args():
                         help='num_workers (default: 16)')
     # parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_tiny_224_0229flex.yaml',
     #                     help='train mamba')
+    # parser.add_argument('--pretrained_weight_path', type=str, default="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth")
     parser.add_argument(
         "--opts",
         help="Modify config options by adding 'KEY VALUE' pairs. ",

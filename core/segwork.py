@@ -44,7 +44,7 @@ class Work():
         self.train_loader = DataLoader(dataset=train_data, batch_size=self.args.batch_size, num_workers=self.args.num_workers,
                                     shuffle=True, drop_last=True)
         self.test_loader = DataLoader(dataset=test_data, batch_size=self.args.batch_size, num_workers=self.args.num_workers,
-                                    shuffle=True, drop_last=True)
+                                    shuffle=False, drop_last=True)
         
     def _seed_init(self, seed=32767):
         random.seed(seed)
@@ -56,7 +56,7 @@ class Work():
         torch.cuda.init()
     
     def logger(self):
-        self.dataset_path = '/mnt/data/Datasets/{}'.format(self.args.dataset)
+        self.dataset_path = '/mnt/data/SegData/{}'.format(self.args.dataset)
         time_flag = datetime.datetime.strftime(datetime.datetime.now(), r"%Y_%m_%d_%H")
         self.save_dir = os.path.join('{}/{}'.format(self.args.root, self.args.dataset.lower()), f"{self.args.model}_{time_flag}")
     

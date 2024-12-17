@@ -18,19 +18,20 @@ class SCD_SAM(nn.Module):
         super().__init__()
         self.inplanes = 96 
         num_classes = num_classes
+        feat_num = int(np.sqrt(input_size) // 2)
 
-        self.SAM_Encoder = build_sam_vit_t()
+        self.SAM_Encoder = build_sam_vit_t(img_size=input_size)
         self.CNN_Encoder = moat_4(use_window=True, num_classes=10)
         self.Binary_Decoder = FPNNeck(self.inplanes)
         self.Semantic_Decoder = AFPN(self.inplanes)
 
         self.CSD = CSD(in_dim=self.inplanes, num_classes=self.inplanes)  
-        self.head = FCNHead(self.inplanes, num_classes, 2)
+        self.head = FCNHead(self.inplanes, num_classes, 1)
 
         if not pretrain is None:
             self._init_weight(pretrain)   
         self.check_channels = ChannelChecker(self.SAM_Encoder, self.inplanes, input_size)
-        self.fusion4 = DFI(self.inplanes*8, self.inplanes*8, 16, 16)
+        self.fusion4 = DFI(self.inplanes*8, self.inplanes*8, feat_num, feat_num)
         self.conv4 = Conv1Relu(self.inplanes*16, self.inplanes*8)
 
 

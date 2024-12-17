@@ -4,41 +4,22 @@ from torch.utils.data import DataLoader
 import numpy as np
 import datetime
 import platform
+import argparse
 import random
 import os
 
 # 基础功能
-from dataset.dataloader import DataReader
-from dataset.CDReader import CDReader, TestReader
-from work.train import train
-from work.predict import predict
 
-# 模型导入
-from core.models.unet import UNet
-from core.models.deeplabv3_plus import DeepLabV3Plus
-from core.models.pspnet import PSPNet
-from core.models.denseaspp import DenseASPP
-from core.models.hrnet import HRNet
-from core.models.dfanet import DFANet
-from core.models.fcn import FCN32s
-from cd_models.mscanet.model import MSCANet  #CropLandCD
-from cd_models.aernet import AERNet
-from cd_models.a2net import LightweightRSCDNet
-from cd_models.ussfcnet.ussfcnet import USSFCNet
-from cd_models.dtcdscn import DTCDSCNet
-from cd_models.changeformer import ChangeFormerV6
-from cd_models.dminet import DMINet
-from cd_models.siamunet_diff import SiamUnet_diff
-from cd_models.dsamnet import DSAMNet
-from cd_models.bit_cd import BIT_CD
-from cd_models.SNUNet import SNUNet
-from cd_models.ResUnet import ResUnet
-from cd_models.icifnet import ICIFNet
-from cd_models.dsifn import DSIFN
-from cd_models.bisrnet import BiSRNet
-from common import Args
+from cd_models.mambacd import build_STMambaSCD
+from cd_models.scd_sam import SCD_SAM
+from cd_models.bisrnet import BiSRNet, SSCDl
+from cd_models.daudt.HRSCD3 import HRSCD3
+from cd_models.daudt.HRSCD4 import HRSCD4
+from cd_models.ssesn import SSESN
+from cd_models.cdsc import CDSC
+from core.scdmisc.predict import predict
 
-
+from core.datasets.SCDReader import MusReader, SCDReader
 
 # class parameter:
 #     lr = params["lr"]
@@ -51,50 +32,65 @@ from common import Args
 # dataset_name = "LEVIR_c"
 # dataset_name = "CLCD"
 # dataset_name = "SYSCD_d"
-dataset_name = "MacaoCD"
-dataset_name = "WHU_BCD"
+dataset_name = "MusSCD"
+dataset_name = 'Second'
 
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 
-
+def parse_args():
+    parser = argparse.ArgumentParser(description='Semantic Segmentation Overfitting Test')
+    # model
+    parser.add_argument('--model', type=str, default='fssh',
+                        help='model name (default: msfgnet)')
+    parser.add_argument('--root', type=str, default='./output',
+                        help='model name (default: ./output)')
+    parser.add_argument('--img_size', type=int, default=512,
+                        help='input image size (default: 256)')
+    parser.add_argument('--device', type=int, default=0,
+                        choices=[-1, 0, 1],
+                        help='device (default: gpu:0)')
+    parser.add_argument('--dataset', type=str, default="Second",
+                        help='dataset name (default: LEVIR_CD)')
+    parser.add_argument('--iters', type=int, default=100, metavar='N',
+                        help='number of epochs to train (default: 100)')
+    parser.add_argument('--en_load_edge', type=bool, default=False,
+                        help='en_load_edge False')
+    parser.add_argument('--num_classes', type=int, default=7,
+                        help='num classes (default: 7)')
+    parser.add_argument('--batch_size', type=int, default=4,
+                        help='batch_size (default: 2)')
+    parser.add_argument('--lr', type=float, default=0.00035, metavar='LR',
+                        help='learning rate (default: 1e-4)')
+    parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
+                        help='momentum (default: 0.9)')
+    parser.add_argument('--weight_decay', type=float, default=5e-4, metavar='M',
+                        help='w-decay (default: 5e-4)')
+    parser.add_argument('--num_workers', type=int, default=16,
+                        help='num_workers (default: 16)')
+    parser.add_argument('--cfg', type=str, default='/home/jq/Code/VMamba/changedetection/configs/vssm1/vssm_base_224.yaml',
+                        help='train mamba')
+    parser.add_argument('--pretrained_weight_path', type=str, default="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth")
+    parser.add_argument(
+        "--opts",
+        help="Modify config options by adding 'KEY VALUE' pairs. ",
+        default=None,
+        nargs='+',
+    )
+    args = parser.parse_args()
+    return args
 
 if __name__ == "__main__":
     # 代码运行预处理
     torch.cuda.empty_cache()
     torch.cuda.init()
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-    # mode:["train","eval","test"] or [1,2,3]
-
-    # 模型选择
-    # model = DeepLabV3Plus(6, 2, backbone="xception", pretrained_base=False,dilated=True)
-    # model = DenseASPP(num_classes, pretrained_base=False)
-    # model = LEDNet(args.num_classes,"resnet50")
-    # model = BiSeNet(args.num_classes)
-    # model = DFANet(num_classes, norm_layer=torch.nn.BatchNorm2d)
-    # model = UNet(6, num_classes)
-    # model = PSPNet(num_classes, pretrained_base=False)
-    # model = HRNet(num_classes)
-    # model = FCN32s(num_classes, aux=True, pretrained_base=False)
-    # model = CDNet(img_size=512)
-    # model = BiSRNet()
-    # model = USSFCNet(in_ch=3).cuda()
-    # model = DTCDSCNet()
-    # model = SUNnet(4,out_size=[512,512]).cuda()
-    model = DMINet()
-    # model = UChange()
-    # model = DSAMNet(2).cuda()
-    # model = BIT_CD().cuda()
-    # model = ICIFNet(2).cuda()
-    # model = SUNnet()
-    # model = DSIFN()
-
-    test_data = TestReader(dataset_path, mode="test",en_edge=False)
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+    args = parse_args()
+    test_data = SCDReader(dataset_path, "test")#MusReader(dataset_path, mode="val")
     
-    weight_path = r"/home/jq/Code/torch/output/whu_bcd/DMINet_2024_06_29_23/DMINet_best.pth"
-    predict(model, test_data, weight_path,test_data.data_name,2,1)
+    weight_path = r"/home/jq/Code/torch/output/second/CDSC_2024_12_10_01/CDSC_best.pth"
+    model = CDSC(output_nc=7)
+
+    predict(model, test_data, weight_path, dataset_name,7,1)
     # x = torch.rand([1,3,256,256]).cuda()
     # y = model(x,x)
     # print(y.shape)    

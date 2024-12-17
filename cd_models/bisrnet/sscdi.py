@@ -4,7 +4,6 @@ import torch.nn as nn
 from torchvision import models
 from torch.nn import functional as F
 from .misc import initialize_weights
-from .loss import CrossEntropyLoss2d, ChangeSimilarity, weighted_BCE_logits
 
 def conv1x1(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
@@ -85,12 +84,11 @@ class SSCDl(nn.Module):
     def __init__(self, in_channels=3, num_classes=7):
         super(SSCDl, self).__init__()
         self.FCN = FCN(in_channels, pretrained=True)
-        self.num_classes = num_classes
         self.classifier1 = nn.Conv2d(128, num_classes, kernel_size=1)
         self.classifier2 = nn.Conv2d(128, num_classes, kernel_size=1)
         
         self.resCD = self._make_layer(ResBlock, 256, 128, 6, stride=1)
-        self.classifierCD = nn.Sequential(nn.Conv2d(128, 64, kernel_size=1), nn.BatchNorm2d(64), nn.ReLU(), nn.Conv2d(64, 2, kernel_size=1))
+        self.classifierCD = nn.Sequential(nn.Conv2d(128, 64, kernel_size=1), nn.BatchNorm2d(64), nn.ReLU(), nn.Conv2d(64, 1, kernel_size=1))
             
         initialize_weights(self.classifier1, self.classifier2, self.resCD, self.classifierCD)
     
@@ -138,22 +136,3 @@ class SSCDl(nn.Module):
         out2 = self.classifier2(x2)
         
         return F.upsample(change, x_size[2:], mode='bilinear'), F.upsample(out1, x_size[2:], mode='bilinear'), F.upsample(out2, x_size[2:], mode='bilinear')
-    
-    @staticmethod
-    def loss(change, out1, out2, label1, label2, device):
-        labels_bn = (label1>0).unsqueeze(1).cuda(device).float()
-        criterion = CrossEntropyLoss2d(ignore_index=0).cuda(device)
-        criterion_sc = ChangeSimilarity().cuda(device)
-        loss_seg = criterion(out1, label1) * 0.5 +  criterion(out2, label2) * 0.5     
-        loss_bn = weighted_BCE_logits(change, labels_bn)
-        loss_sc = criterion_sc(out1[:,1:], out2[:,1:], labels_bn)
-        loss = loss_seg + loss_bn + loss_sc
-        return loss
-
-    @staticmethod
-    def predict(change, out1, out2):
-        change_mask = F.sigmoid(change).cpu().detach()>0.5
-        preds_A = torch.argmax(out1, dim=1)
-        preds_B = torch.argmax(out2, dim=1)
-        preds_A = (preds_A*change_mask.squeeze().long()).numpy()
-        preds_B = (preds_B*change_mask.squeeze().long()).numpy()

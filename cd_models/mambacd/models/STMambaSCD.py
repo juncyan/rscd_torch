@@ -81,7 +81,7 @@ class STMambaSCD(nn.Module):
         )
 
 
-        self.main_clf_cd = nn.Conv2d(in_channels=128, out_channels=2, kernel_size=1)
+        self.main_clf_cd = nn.Conv2d(in_channels=128, out_channels=1, kernel_size=1)
         self.aux_clf = nn.Conv2d(in_channels=128, out_channels=num_classes, kernel_size=1)
 
 
@@ -111,7 +111,7 @@ class STMambaSCD(nn.Module):
 def build_STMambaSCD(args):
     config = get_config(args)
     model = STMambaSCD(
-            pretrained="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth",
+            pretrained=args.pretrained_weight_path,
             patch_size=config.MODEL.VSSM.PATCH_SIZE, 
             in_chans=config.MODEL.VSSM.IN_CHANS, 
             num_classes=config.MODEL.NUM_CLASSES, 

@@ -42,7 +42,7 @@ def evaluation(model, dataloader_val, args):
 
             outputs_A = outputs_A.cpu().detach()
             outputs_B = outputs_B.cpu().detach()
-            change_mask = torch.argmax(out_change, axis=1).cpu().detach() #F.sigmoid(out_change).cpu().detach()>0.5 #
+            change_mask = F.sigmoid(out_change).cpu().detach()>0.5 #torch.argmax(out_change, axis=1).cpu().detach() #F.sigmoid(out_change).cpu().detach()>0.5 #
 
             preds_A = torch.argmax(outputs_A, dim=1)
             preds_B = torch.argmax(outputs_B, dim=1)

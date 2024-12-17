@@ -4,44 +4,12 @@ import torch.nn as nn
 from torchvision import models
 from torch.nn import functional as F
 from .misc import initialize_weights
-from .unet_plusplus import NestedUNet
 
 def conv1x1(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
-
-class ResBlock(nn.Module):
-    expansion = 1
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
-        super(ResBlock, self).__init__()
-        self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.downsample = downsample
-        self.stride = stride
-    
-    def forward(self, x):
-        identity = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out += identity
-        out = self.relu(out)
-
-        return out
-
 
 class FCN(nn.Module):
     def __init__(self, in_channels=3, pretrained=True):
@@ -82,31 +50,35 @@ class FCN(nn.Module):
             layers.append(block(self.inplanes, planes))
         return nn.Sequential(*layers)
 
-class DecoderBlock(nn.Module):
-    def __init__(self, in_channels, n_filters):
-        super(DecoderBlock,self).__init__()
-
-        self.conv1 = nn.Conv2d(in_channels, in_channels // 4, 1)
-        self.norm1 = nn.BatchNorm2d(in_channels // 4)
-        self.relu = nn.ReLU()
-
-        self.deconv2 = nn.ConvTranspose2d(in_channels // 4, in_channels // 4, 3, stride=2, padding=1, output_padding=1)
-        self.norm2 = nn.BatchNorm2d(in_channels // 4)
-
-        self.conv3 = nn.Conv2d(in_channels // 4, n_filters, 1)
-        self.norm3 = nn.BatchNorm2d(n_filters)
-
+class ResBlock(nn.Module):
+    expansion = 1
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
+        super(ResBlock, self).__init__()
+        self.conv1 = conv3x3(inplanes, planes, stride)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.downsample = downsample
+        self.stride = stride
+    
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.norm1(x)
-        x = self.relu(x)
-        x = self.deconv2(x)
-        x = self.norm2(x)
-        x = self.relu(x)
-        x = self.conv3(x)
-        x = self.norm3(x)
-        x = self.relu(x)
-        return x
+        identity = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        if self.downsample is not None:
+            identity = self.downsample(x)
+
+        out += identity
+        out = self.relu(out)
+
+        return out
 
 class SR(nn.Module):
     '''Spatial reasoning module'''
@@ -192,13 +164,11 @@ class CotSR(nn.Module):
         
         return out1, out2
 
-
 class BiSRNet(nn.Module):
     def __init__(self, in_channels=3, num_classes=7):
         super(BiSRNet, self).__init__()        
         self.FCN = FCN(in_channels, pretrained=True)
-        self.SR1 = SR(128)
-        self.SR2 = SR(128)
+        self.SiamSR = SR(128)
         self.CotSR = CotSR(128)
         
         self.resCD = self._make_layer(ResBlock, 256, 128, 6, stride=1)
@@ -206,7 +176,7 @@ class BiSRNet(nn.Module):
         self.classifier2 = nn.Conv2d(128, num_classes, kernel_size=1)
         
         self.classifierCD = nn.Sequential(nn.Conv2d(128, 64, kernel_size=1), nn.BatchNorm2d(64), nn.ReLU(), nn.Conv2d(64, 1, kernel_size=1))
-        initialize_weights(self.resCD, self.classifierCD, self.classifier1, self.classifier2)
+        initialize_weights( self.SiamSR, self.resCD, self.CotSR, self.classifierCD, self.classifier1, self.classifier2)
     
     def _make_layer(self, block, inplanes, planes, blocks, stride=1):
         downsample = None
@@ -232,6 +202,7 @@ class BiSRNet(nn.Module):
         x = self.FCN.layer3(x) #size:1/16
         x = self.FCN.layer4(x)
         x = self.FCN.head(x)
+        x = self.SiamSR(x)
         
         return x
     
@@ -243,11 +214,9 @@ class BiSRNet(nn.Module):
         return change
     
     def forward(self, x1, x2):
-        x_size = x1.size()
+        x_size = x1.size()        
         x1 = self.base_forward(x1)
         x2 = self.base_forward(x2)
-        x1 = self.SR1(x1)
-        x2 = self.SR2(x2)
         change = self.CD_forward(x1, x2)
         
         x1, x2 = self.CotSR(x1, x2)

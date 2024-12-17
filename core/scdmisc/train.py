@@ -35,7 +35,7 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
         model.train()
         loss_record = []
 
-        for image1, image2, label1, label2, label, _ in tqdm(dataloader_train):
+        for image1, image2, label1, label2, label in tqdm(dataloader_train):
 
             image1 = image1.to(args.device)
             image2 = image2.to(args.device)
@@ -47,7 +47,7 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
             out_change, outputs_A, outputs_B = model(image1, image2)
             
             optimizer.zero_grad()  
-
+            # print(out_change.shape, label.shape)
             # reduced_loss = loss_lovasz(out_change, outputs_A, outputs_B, label1, label2, label)
             loss_seg = seg_criterion(outputs_A, label1) * 0.5 +  seg_criterion(outputs_B, label2) * 0.5
             loss_sc = criterion_sc(outputs_A[:,1:], outputs_B[:,1:], label)

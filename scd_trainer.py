@@ -9,32 +9,16 @@ import os
 
 # 模型导入
 
-from cd_models.mscanet.model import MSCANet
-from cd_models.aernet import AERNet
-from cd_models.ResUnet import ResUnet
-from cd_models.a2net import LightweightRSCDNet
-from cd_models.ussfcnet.ussfcnet import USSFCNet
-from cd_models.dtcdscn import DTCDSCNet
-from cd_models.changeformer import ChangeFormerV6
-from cd_models.dminet import DMINet
-from cd_models.siamunet_diff import SiamUnet_diff
-from cd_models.siamunet import SiamUnet_conc
-from cd_models.SNUNet import SNUNet
-from cd_models.dsamnet import DSAMNet
-from cd_models.stanet import STANetSA
-from cd_models.icifnet import ICIFNet
-from cd_models.dsifn import DSIFN
-from cd_models.bit_cd import BIT_CD
-from cd_models.transunet import TransUNet
-from cd_models.rdpnet import RDPNet
-from cd_models.bisrnet import BiSRNet, SSCDl
-from cd_models.hanet import HAN
-from cd_models.cgnet import CGNet
-from cd_models.rsmamba import RSMamba_CD
 from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
+from cd_models.bisrnet import BiSRNet, SSCDl
+from cd_models.daudt.HRSCD3 import HRSCD3
+from cd_models.daudt.HRSCD4 import HRSCD4
+from cd_models.ssesn import SSESN
+from cd_models.cdsc import CDSC
 
 from core.scdwork import Work
+# from core.secondwork import Work
 
 # dataset_name = "GVLM_CD"
 # dataset_name = "LEVIR_CD"
@@ -48,18 +32,18 @@ def parse_args():
                         help='model name (default: msfgnet)')
     parser.add_argument('--root', type=str, default='./output',
                         help='model name (default: ./output)')
-    parser.add_argument('--img_size', type=int, default=512,
+    parser.add_argument('--img_size', type=int, default=256,
                         help='input image size (default: 256)')
-    parser.add_argument('--device', type=int, default=0,
+    parser.add_argument('--device', type=int, default=1,
                         choices=[-1, 0, 1],
                         help='device (default: gpu:0)')
-    parser.add_argument('--dataset', type=str, default="Second",
+    parser.add_argument('--dataset', type=str, default="MusSCD",
                         help='dataset name (default: LEVIR_CD)')
     parser.add_argument('--iters', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: 100)')
     parser.add_argument('--en_load_edge', type=bool, default=False,
                         help='en_load_edge False')
-    parser.add_argument('--num_classes', type=int, default=7,
+    parser.add_argument('--num_classes', type=int, default=5,
                         help='num classes (default: 7)')
     parser.add_argument('--batch_size', type=int, default=4,
                         help='batch_size (default: 2)')
@@ -71,8 +55,9 @@ def parse_args():
                         help='w-decay (default: 5e-4)')
     parser.add_argument('--num_workers', type=int, default=16,
                         help='num_workers (default: 16)')
-    parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/mambacd/configs/vssm1/vssm_tiny_224_0229flex.yaml',
+    parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/vmamba/configs/vssm_base_224.yaml',
                         help='train mamba')
+    parser.add_argument('--pretrained_weight_path', type=str, default="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth")
     parser.add_argument(
         "--opts",
         help="Modify config options by adding 'KEY VALUE' pairs. ",
@@ -89,7 +74,10 @@ if __name__ == "__main__":
     args = parse_args()
     # model = build_STMambaSCD(args)
     # model = SSCDl(in_channels=3, num_classes=args.num_classes)
-    model = SCD_SAM()
+    # model = SCD_SAM(input_size=args.img_size, num_classes=args.num_classes)
+    # model = CDSC(output_nc=args.num_classes)
+    # model = HRSCD4(3, args.num_classes)
+    model = BiSRNet(num_classes=args.num_classes)
     w = Work(model, args)
     
     

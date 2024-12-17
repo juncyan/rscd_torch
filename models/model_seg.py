@@ -14,7 +14,7 @@ from .backbone import LKSSMNet
 from .decoder import UpConvBlock_v1, UpConvBlock, DTMS
 from .replk import SS2D_v3
 from .ram import ChannelSSM, ConvBNAct
-from .mkdc import CrossDimensionalGroupedAggregation, RepLKSSMBlock
+from .mkdc import CrossDimensionalGroupedAggregation, RepLKSSMBlock, RepLKSSMBlock_v2, CrossDimensionalGroupedAggregation_v2
 
 # RepLK Convolutional Additive Mamba for Land Cover Fain-graind Understanding
 
@@ -50,7 +50,8 @@ class RepLKSSM_Seg(nn.Module):
     def forward(self, x1):
         f1_list = self.encoder(x1)
         
-        f4, f2 = f1_list[3], f1_list[1]
+        f1, f2, f3, f4 = f1_list
+        # print(f4.shape, f3.shape, f2.shape, f1.shape)
         f4 = self.conv1(f4)
         f4 = self.lks1(f4)
         f4 = self.conv11(f4)
