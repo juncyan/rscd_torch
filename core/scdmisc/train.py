@@ -51,6 +51,7 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
             # reduced_loss = loss_lovasz(out_change, outputs_A, outputs_B, label1, label2, label)
             loss_seg = seg_criterion(outputs_A, label1) * 0.5 +  seg_criterion(outputs_B, label2) * 0.5
             loss_sc = criterion_sc(outputs_A[:,1:], outputs_B[:,1:], label)
+
             loss_bn =  weighted_BCE_logits(out_change, label)
             
             reduced_loss = loss_seg + loss_bn + loss_sc

@@ -1,19 +1,24 @@
-import os
-import glob
+import torch
+import torch.nn.functional as F
 
-def delete_pth_files(root_folder):
-    # 获取所有 .pth 文件的路径
-    pth_files = glob.glob(os.path.join(root_folder, '**', '*.pth'), recursive=True)
-    
-    for file_path in pth_files:
-        try:
-            os.remove(file_path)
-            print(f"Deleted: {file_path}")
-        except OSError as e:
-            print(f"Error deleting {file_path}: {e}")
+from scdmodel.scd import SCDSam_Mamba
+from models.cdfa import ConDSeg
+from cd_models.mobilesam import build_sam_vit_t
+from scdmodel.cddecoder import CD_Mamba
+from scdmodel.decoder import SemantiCrossA
+from models.cdfa import ContrastDrivenFeatureAggregation
 
-# 指定你的根文件夹路径
-root_folder_path = '/home/jq/Code/CdSC/results'
-delete_pth_files(root_folder_path)
-    
-    
+from einops import rearrange, repeat
+
+
+
+
+if __name__ == "__main__":
+    print('test')
+    x1 = torch.randn([1,160,64,64]).cuda()
+    x2 = torch.randn([1,320,8,8]).cuda()
+    a = torch.randn([1,256,16,16]).cuda()
+    m = SemantiCrossA(320, 160, 64, 512).cuda()
+    y = m(x1,x2,a)
+    for i in y:
+        print(i.shape)

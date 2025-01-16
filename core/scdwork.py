@@ -8,7 +8,6 @@ import numpy as np
 import datetime
 
 from .datasets import SCDReader
-from .datasets.SCDReader import MusReader
 from .cdmisc import load_logger
 from .scdmisc.train import train
 
@@ -32,14 +31,14 @@ class Work():
         train(model, self.train_loader, self.val_loader, self.test_loader, self.args)
 
     def dataloader(self, datasetlist=['train', 'val', 'test']):
-        train_data = MusReader(self.dataset_path, datasetlist[0])
-        val_data = MusReader(self.dataset_path, datasetlist[1])
-        test_data = MusReader(self.dataset_path, datasetlist[1])
+        train_data = SCDReader(self.dataset_path, datasetlist[0])
+        val_data = SCDReader(self.dataset_path, datasetlist[2])
+        test_data = SCDReader(self.dataset_path, datasetlist[2])
 
         self.args.traindata_num = train_data.__len__()
         self.args.val_num = val_data.__len__()
         self.args.test_num =test_data.__len__()
-        self.args.label_info = np.transpose(train_data.label_info.values, [1,0])
+        self.args.label_info = np.uint8(np.transpose(train_data.label_info.values, [1,0]))
 
         self.val_loader = DataLoader(dataset=val_data, batch_size=self.args.batch_size, num_workers=self.args.num_workers,
                                     shuffle=False, drop_last=True)
@@ -70,7 +69,7 @@ class Work():
         self.args.metric_path = os.path.join(self.save_dir, "{}_metrics.csv".format(self.args.model))
         self.args.save_dir = self.save_dir
         print("log save at {}, metric save at {}, weight save at {}".format(log_path, self.args.metric_path, self.args.best_model_path))
-        self.args.logger = load_logger(log_path)
+        self.args.logger = load_logger(log_path, config=self.args)
         self.log_misc()
         self.args.logger.info("log save at {}, metric save at {}, weight save at {}".format(log_path, self.args.metric_path, self.args.best_model_path))
     

@@ -612,32 +612,29 @@ class TinyViT(nn.Module):
     def no_weight_decay_keywords(self):
         return {'attention_biases'}
     
-    def convert(self,x):
-        B,N,C=x.size()
-        WH=int(np.sqrt(N))
-        x = x.view(B, WH, WH, C)
-        # x=x.permute(0, 3, 1, 2)
-        return x
+    # def convert(self,x):
+    #     B,N,C=x.size()
+    #     WH=int(np.sqrt(N))
+    #     x = x.view(B, WH, WH, C)
+    #     # x=x.permute(0, 3, 1, 2)
+    #     return x
 
     def forward_features(self, x):
         # x: (N, C, H, W)
         x = self.patch_embed(x)
-        # print("000",x.shape)
         x = self.layers[0](x)
         start_i = 1
-        features=[]
+        features=[x]
         B,N,C=x.size()
         WH=int(np.sqrt(N))
         x1 = x.view(B, WH, WH, C)
         x1=x1.permute(0, 3, 1, 2)
-        # print("1111",x.shape)
-        features.append(x1)
+        # features.append(x1)
         for i in range(start_i, len(self.layers)):
             layer = self.layers[i]
             x = layer(x)
-            x2=self.convert(x)
-            # print("222",x.shape)
-            features.append(x2)
+            # x2=self.convert(x)
+            features.append(x)
      
         B,N,C=x.size()
                                     

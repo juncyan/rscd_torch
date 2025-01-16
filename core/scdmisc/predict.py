@@ -111,7 +111,7 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
             evaluator.add_batch(preds_B, labels_B)
            
             for idx, (is1, is2, cdm) in enumerate(zip(preds_A, preds_B, change_mask)):
-                cdm = np.array(cdm.squeeze(), np.int8)
+                cdm = np.array(cdm.squeeze(), np.uint8)
                 if np.max(cdm) == np.min(cdm):
                     continue
                 flag_local = (gt[idx] - cdm)
@@ -121,11 +121,12 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
                 cdm = change_color[cdm]
                 is1 = label_info[is1]
                 is2 = label_info[is2]
-                io.imwrite(f"{img_dir}/{name}", cdm)
+                io.imsave(f"{img_dir}/{name}", np.uint8(cdm))
                 fa = name.replace(".", "_A.")
                 fb = name.replace(".", "_B.")
-                io.imwrite(f"{img_dir}/{fa}", is1)
-                io.imwrite(f"{img_dir}/{fb}", is2)
+                io.imsave(f"{img_dir}/{fa}", np.uint8(is1))
+                io.imsave(f"{img_dir}/{fb}", np.uint8(is2))
+
         
 
     evaluator.get_hist(save_path=f"{img_dir}/hist.csv")
@@ -242,7 +243,7 @@ def test(model, dataloader_test, args):
             evaluator.add_batch(preds_B, labels_B)
 
             for idx, (is1, is2, cdm) in enumerate(zip(preds_A, preds_B, change_mask)):
-                cdm = np.array(cdm.squeeze(), np.int8)
+                cdm = np.array(cdm.squeeze(), np.uint8)
                 if np.max(cdm) == np.min(cdm):
                     continue
                 flag_local = (gt[idx] - cdm)
@@ -252,13 +253,11 @@ def test(model, dataloader_test, args):
                 cdm = change_color[cdm]
                 is1 = args.label_info[is1]
                 is2 = args.label_info[is2]
-                io.imwrite(f"{img_dir}/{name}", cdm)
+                io.imsave(f"{img_dir}/{name}", np.uint8(cdm))
                 fa = name.replace(".", "_A.")
                 fb = name.replace(".", "_B.")
-                io.imwrite(f"{img_dir}/{fa}", is1)
-            
-                io.imwrite(f"{img_dir}/{fb}", is2)
-        
+                io.imsave(f"{img_dir}/{fa}", np.uint8(is1))
+                io.imsave(f"{img_dir}/{fb}", np.uint8(is2))
 
     evaluator.get_hist(save_path=f"{img_dir}/hist.csv")
     metrics = evaluator.Get_Metric()

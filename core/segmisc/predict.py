@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-import cv2
+from skimage import io
 import numpy as np
 import torch
 import torch.nn.functional  as F
@@ -98,8 +98,8 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
                     flag = (label[idx] - ipred)
                     ipred[flag == -1] = 2
                     ipred[flag == 1] = 3
-                    img = color_label[ipred]
-                    cv2.imwrite(f"{img_dir}/{name[idx]}", img)
+                    img = np.uint8(color_label[ipred])
+                    io.imsave(f"{img_dir}/{name[idx]}", img)
 
     evaluator.calc()
     miou = evaluator.Mean_Intersection_over_Union()
@@ -187,10 +187,10 @@ def test(model, dataloader_test, args=None):
             evaluator.add_batch(preds, label)
 
             for idx, pred in enumerate(preds):
-                pred = np.array(pred.squeeze(), np.int8)
+                pred = np.array(pred.squeeze(), np.uint8)
                 if np.max(preds) == np.min(preds):
                     continue
-                cv2.imwrite(f"{img_dir}/{file[idx]}", pred)
+                io.imsave(f"{img_dir}/{file[idx]}", pred)
             
     metrics = evaluator.Get_Metric()
     miou = metrics['miou']

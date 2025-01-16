@@ -51,7 +51,8 @@ def load_logger(save_log_dir,save=True,print=True,config=None):
     if save:
         file_handler = RotatingFileHandler(save_log_dir, maxBytes=1024000, backupCount=5)
         file_handler.setLevel(level=logging.INFO)
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter(datefmt='%Y/%m/%d %H:%M:%S',
+                                      fmt='[ %(asctime)s ] %(message)s')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
