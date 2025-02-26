@@ -1,9 +1,13 @@
+import torch
 import torch.nn as nn
+from torch.nn import functional as F
 from cd_models.mobilesam import build_sam_vit_t
 from cd_models import layers
 
 from .cddecoder import CD_Mamba, CD_CrossA
 from .decoder import SemantiMambacDv0, SemantiCrossA
+from .utils import features_transfer
+
 
 class SCDSam_CrossA(nn.Module):
     def __init__(self, img_size=256,num_seg=7,num_cd=2):
@@ -12,8 +16,8 @@ class SCDSam_CrossA(nn.Module):
         self.sam.eval()
 
         self.fusion1 = SemantiCrossA(320,128,64,img_size)
-        self.fusion2 = SemantiCrossA(320,128,64,img_size)
-        self.cdfusion = CD_Mamba(320,128,64,img_size)
+
+        self.cdfusion = CD_CrossA(320,128,64,img_size)
 
         self.cls = layers.ConvBN(64,1,7)
         self.scls1 = layers.ConvBN(64,num_seg,7)
@@ -29,7 +33,7 @@ class SCDSam_CrossA(nn.Module):
             
         b1, b4, b, p1, p4, p = self.extractor(x1, x2)
         tb1 = self.fusion1(b1, b4, b)
-        tp2 = self.fusion2(p1, p4, p)
+        tp2 = self.fusion1(p1, p4, p)
         
         t= self.cdfusion(b1, b4, p1, b4)
 
@@ -47,4 +51,4 @@ class SCDSam_CrossA(nn.Module):
         p1, p2, p3, p4, p = self.sam(x2)
         # print(b1.shape, b2.shape, b3.shape, b4.shape, p1.shape, p2.shape, p3.shape, p4.shape)
 
-        return b1, b4, b, p1, p4, p
+        return b1, b3, b, p1, p3, p

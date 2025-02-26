@@ -36,7 +36,7 @@ from cd_models.scd_sam import SCD_SAM
 from cd_models.dgma2net import DGMAANet
 from models.model_cd import RLM_CD_v2, RLM_CD_v3
 from models.lkssm_cd_v0 import RepLKSSM_CD_v0
-
+from scdmodel.scd import CDSam_RLKA
 from core.bcdwork import Work
 
 # dataset_name = "GVLM_CD"
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     args = parse_args()
     # model = build_STMambaSCD(args)
     # model = DGMAANet(3,2)
-    model = RLM_CD_v2()
+    model = CDSam_RLKA(args.img_size)
     w = Work(model, args)
     
     
