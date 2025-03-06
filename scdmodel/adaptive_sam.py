@@ -42,7 +42,7 @@ class MSAMMamba(nn.Module):
         for param in self.sam.parameters():
             param.requires_grad = False
         
-        self.mamba = LKSSMBlock(64, 7)
+        self.mamba = LKSSMBlock(64, 13)
     
     def forward(self, inputs):
         x = self.sam.image_encoder.patch_embed(inputs)

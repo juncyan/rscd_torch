@@ -95,16 +95,16 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
             
             pred = model(image1, image2)
            
-            # if hasattr(model, "loss"):
-            #     reduced_loss = model.loss(pred, label)
-            # else:
-            #     if (type(pred) == tuple) or (type(pred) == list):
-            #         pred = pred[args.pred_idx]
-            #     reduced_loss = loss(pred, label)
+            if hasattr(model, "loss"):
+                reduced_loss = model.loss(pred, label)
+            else:
+                if (type(pred) == tuple) or (type(pred) == list):
+                    pred = pred[args.pred_idx]
+                reduced_loss = loss(pred, label)
             # print(pred.shape, label.shape)
 
-            ce_loss_1 = BCEDiceLoss(pred, label)
-            reduced_loss = ce_loss_1
+            # ce_loss_1 = BCEDiceLoss(pred, label)
+            # reduced_loss = ce_loss_1
             # lovasz_loss = L.lovasz_softmax(F.softmax(pred, dim=1), label, ignore=255)
             # main_loss = ce_loss_1 + 0.75 * lovasz_loss
             # reduced_loss = main_loss

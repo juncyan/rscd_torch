@@ -85,12 +85,12 @@ class ResBlock(nn.Module):
 class SAM_CD(nn.Module):
     def __init__(
         self,
+        imgsz: int=1024,
         num_embed=8,
-        model_name: str='FastSAM-x.pt',
+        model_name: str='/home/jq/Code/SAM-CD/FastSAM-x.pt',
         device: str='cuda',
         conf: float=0.4,
         iou: float=0.4,
-        imgsz: int=1024,
         retina_masks: bool=True,
         done_warmup: bool=True,
         ):

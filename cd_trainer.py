@@ -33,10 +33,11 @@ from cd_models.cgnet import CGNet
 # from cd_models.rsmamba import RSMamba_CD
 # from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
+from cd_models.samcd.SAM_CD import SAM_CD
 from cd_models.dgma2net import DGMAANet
+# from cd_models.lccdmamba.model import LCCDMamba
 from models.model_cd import RLM_CD_v2, RLM_CD_v3
 from models.lkssm_cd_v0 import RepLKSSM_CD_v0
-from scdmodel.scd import CDSam_RLKA
 from core.bcdwork import Work
 
 # dataset_name = "GVLM_CD"
@@ -53,7 +54,7 @@ def parse_args():
                         help='run save dir (default: ./output)')
     parser.add_argument('--img_size', type=int, default=512,
                         help='input image size (default: 256)')
-    parser.add_argument('--device', type=int, default=0,
+    parser.add_argument('--device', type=int, default=1,
                         choices=[-1, 0, 1],
                         help='device (default: gpu:0)')
     parser.add_argument('--dataset', type=str, default="GVLM_CD",
@@ -93,7 +94,7 @@ if __name__ == "__main__":
     args = parse_args()
     # model = build_STMambaSCD(args)
     # model = DGMAANet(3,2)
-    model = CDSam_RLKA(args.img_size)
+    model = SAM_CD(imgsz=args.img_size, device='cuda:1')
     w = Work(model, args)
     
     
