@@ -30,6 +30,7 @@ from cd_models.rdpnet import RDPNet
 from cd_models.bisrnet import BiSRNet, SSCDl
 from cd_models.hanet import HAN
 from cd_models.cgnet import CGNet
+from cd_models.isdanet import ISDANet
 # from cd_models.rsmamba import RSMamba_CD
 # from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
@@ -65,7 +66,7 @@ def parse_args():
                         help='en_load_edge False')
     parser.add_argument('--num_classes', type=int, default=2,
                         help='num classes (default: 2)')
-    parser.add_argument('--batch_size', type=int, default=16,
+    parser.add_argument('--batch_size', type=int, default=8,
                         help='batch_size (default: 8)')
     parser.add_argument('--lr', type=float, default=2.8e-4, metavar='LR',
                         help='learning rate (default: 1e-4)')
@@ -94,7 +95,7 @@ if __name__ == "__main__":
     args = parse_args()
     # model = build_STMambaSCD(args)
     # model = DGMAANet(3,2)
-    model = SAM_CD(imgsz=args.img_size, device='cuda:1')
+    model = ISDANet() #(imgsz=args.img_size, device='cuda:1')
     w = Work(model, args)
     
     
