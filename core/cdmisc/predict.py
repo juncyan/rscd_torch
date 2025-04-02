@@ -77,11 +77,11 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
                 if (type(pred) == tuple) or (type(pred) == list):
                     pred = pred[-1]
 
-            if pred.shape[1] > 1:
+            if pred.shape[1] > 1 and len(pred.shape) > 3:
                 pred = torch.argmax(pred, axis=1)
             pred = pred.squeeze().cpu()
 
-            if label.shape[1] > 1:
+            if label.shape[1] > 1 and len(label.shape) > 3:
                 label = torch.argmax(label, axis=1)
             label = label.squeeze()
             label = label.numpy()
@@ -173,11 +173,11 @@ def test(model, dataset, args=None):
                 if (type(pred) == tuple) or (type(pred) == list):
                     pred = pred[0]
 
-            if pred.shape[1] > 1:
+            if pred.shape[1] > 1 and len(pred.shape) > 3:
                 pred = torch.argmax(pred, axis=1)
             pred = pred.squeeze().cpu()
 
-            if label.shape[1] > 1:
+            if label.shape[1] >  1 and len(label.shape) > 3:
                 label = torch.argmax(label, axis=1)
             label = label.squeeze()
             label = label.numpy()

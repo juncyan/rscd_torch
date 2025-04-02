@@ -39,6 +39,7 @@ from cd_models.dgma2net import DGMAANet
 # from cd_models.lccdmamba.model import LCCDMamba
 from models.model_cd import RLM_CD_v2, RLM_CD_v3
 from models.lkssm_cd_v0 import RepLKSSM_CD_v0
+from lkmamba_cd import LKMamba_CD
 from core.bcdwork import Work
 
 # dataset_name = "GVLM_CD"
@@ -95,7 +96,7 @@ if __name__ == "__main__":
     args = parse_args()
     # model = build_STMambaSCD(args)
     # model = DGMAANet(3,2)
-    model = ISDANet() #(imgsz=args.img_size, device='cuda:1')
+    model = LKMamba_CD() #(imgsz=args.img_size, device='cuda:1')
     w = Work(model, args)
     
     

@@ -17,9 +17,12 @@ from cd_models.daudt.HRSCD3 import HRSCD3
 from cd_models.daudt.HRSCD4 import HRSCD4
 from cd_models.ssesn import SSESN
 from cd_models.cdsc import CDSC
-from core.scdmisc.predict import predict
+from cd_models.isdanet import ISDANet
+# from core.scdmisc.predict import predict
 
-from core.datasets.SCDReader import MusReader, SCDReader
+# from core.datasets.SCDReader import MusReader, SCDReader
+from core.cdmisc.predict import predict
+from core.datasets.CDReader import CDReader
 
 # class parameter:
 #     lr = params["lr"]
@@ -30,10 +33,12 @@ from core.datasets.SCDReader import MusReader, SCDReader
 
 # dataset_name = "GVLM_CD_d"
 # dataset_name = "LEVIR_c"
-# dataset_name = "CLCD"
+dataset_name = "CLCD"
 # dataset_name = "SYSCD_d"
-dataset_name = "MusSCD"
-dataset_name = 'Second'
+# dataset_name = "MusSCD"
+# dataset_name = 'Second'
+# dataset_name = "MacaoCD"
+# dataset_name = "SYSU_CD"
 
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 
@@ -83,14 +88,14 @@ if __name__ == "__main__":
     # 代码运行预处理
     torch.cuda.empty_cache()
     torch.cuda.init()
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     args = parse_args()
-    test_data = SCDReader(dataset_path, "test")#MusReader(dataset_path, mode="val")
+    test_data = CDReader(dataset_path, "test")#MusReader(dataset_path, mode="val")
     
-    weight_path = r"/home/jq/Code/torch/output/second/CDSC_2024_12_10_01/CDSC_best.pth"
-    model = CDSC(output_nc=7)
+    weight_path = r"/home/jq/Code/torch/output/clcd/ISDANet_2025_03_09_20/ISDANet_best.pth"
+    model = ISDANet()
 
-    predict(model, test_data, weight_path, dataset_name,7,1)
+    predict(model, test_data, weight_path, dataset_name,2,0)
     # x = torch.rand([1,3,256,256]).cuda()
     # y = model(x,x)
     # print(y.shape)    
