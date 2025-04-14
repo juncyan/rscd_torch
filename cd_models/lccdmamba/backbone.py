@@ -20,15 +20,20 @@ mamba_version_weights = {"vssm_base_224.yaml":"/home/jq/Code/weights/vssm_base_0
                          "vssm_small_224.yaml":"/home/jq/Code/weights/vssm_small_0229_ckpt_epoch_222.pth",
                          "vssm_tiny_224.yaml":"/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth"}
 
-parser = argparse.ArgumentParser(description="VSSMamba")
-parser.add_argument('--cfg', type=str, default='/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_base_224.yaml')
-parser.add_argument(
-        "--opts",
-        help="Modify config options by adding 'KEY VALUE' pairs. ",
-        default=None,
-        nargs='+')
+# parser = argparse.ArgumentParser(description="VSSMamba")
+# parser.add_argument('--cfg', type=str, default='/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_base_224.yaml')
+# parser.add_argument(
+#         "--opts",
+#         help="Modify config options by adding 'KEY VALUE' pairs. ",
+#         default=None,
+#         nargs='+')
 
-mparas = parser.parse_args()
+# mparas = parser.parse_args()
+class Args:
+    cfg = '/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_base_224.yaml'
+    opts = None
+    
+mparas = Args()
 config = get_config(mparas)
 
 

@@ -1,16 +1,16 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.utils.checkpoint as checkpoint
-from einops import rearrange, repeat
-import argparse
-from timm.models.layers import DropPath, trunc_normal_
-from fvcore.nn import FlopCountAnalysis, flop_count_str, flop_count, parameter_count
+# import torch.nn.functional as F
+# import torch.utils.checkpoint as checkpoint
+# from einops import rearrange, repeat
+# import argparse
+# from timm.models.layers import DropPath, trunc_normal_
+# from fvcore.nn import FlopCountAnalysis, flop_count_str, flop_count, parameter_count
 
-from torchvision.models.resnet import resnet34, ResNet34_Weights, resnet50
-from torchvision.models.vision_transformer import vit_b_16, VisionTransformer
-from torchvision.models.swin_transformer import swin_v2_b
-from torchvision import transforms
+# from torchvision.models.resnet import resnet34, ResNet34_Weights, resnet50
+# from torchvision.models.vision_transformer import vit_b_16, VisionTransformer
+# from torchvision.models.swin_transformer import swin_v2_b
+# from torchvision import transforms
 
 from .vmamba import VSSM, LayerNorm2d
 
@@ -33,9 +33,8 @@ mamba_version_cfg = {"base":'/home/jq/Code/torch/cd_models/vmamba/configs/vssm_b
 #         nargs='+')
 
 # mparas = parser.parse_args()
-mamba_version = "base"
+mamba_version = "tiny"
 config = get_config(mamba_version_cfg[mamba_version])
-
 
 class Backbone_VSSM(VSSM):
     def __init__(self, 
@@ -120,8 +119,7 @@ class Backbone_VSSM(VSSM):
 
         if len(self.out_indices) == 0:
             return x
-
-
+        return outs
 
 
 def build_VSSM(version="base"):

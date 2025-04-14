@@ -107,11 +107,16 @@ class STMambaSCD(nn.Module):
 
         return output_bcd, output_T1, output_T2
 
+class Args:
+    cfg = '/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_base_224.yaml'
+    opts = None
 
 def build_STMambaSCD(args):
-    config = get_config(args)
+    mparas = Args()
+    config = get_config(mparas)
+    # config = get_config(args)
     model = STMambaSCD(
-            pretrained=args.pretrained_weight_path,
+            pretrained="/home/jq/Code/weights/vssm_base_0229_ckpt_epoch_237.pth", #args.pretrained_weight_path,
             patch_size=config.MODEL.VSSM.PATCH_SIZE, 
             in_chans=config.MODEL.VSSM.IN_CHANS, 
             num_classes=config.MODEL.NUM_CLASSES, 

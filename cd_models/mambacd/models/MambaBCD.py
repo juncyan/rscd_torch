@@ -87,9 +87,15 @@ class STMambaBCD(nn.Module):
         main_loss = ce_loss_1 + 0.75 * lovasz_loss
         return main_loss
 
+class Args:
+    cfg = '/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_base_224.yaml'
+    opts = None
+    
 
 def build_STMambaBCD(args):
-    config = get_config(args)
+    mparas = Args()
+    config = get_config(mparas)
+    # config = get_config(args)
     model = STMambaBCD(
             pretrained="/home/jq/Code/weights/vssm_base_0229_ckpt_epoch_237.pth",
             patch_size=config.MODEL.VSSM.PATCH_SIZE, 
