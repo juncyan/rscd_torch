@@ -16,7 +16,7 @@ class CMConv(nn.Module):
 
         def backward_hook(grad):
             out = grad.clone()
-            out[self.mask] = 0
+            out[self.mask.bool()] = 0
             return out
 
         self.mask = torch.zeros(self.conv.weight.shape).byte().cuda()

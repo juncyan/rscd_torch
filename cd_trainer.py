@@ -35,7 +35,10 @@ from cd_models.isdanet import ISDANet
 # from cd_models.mambacd import build_STMambaSCD
 from cd_models.scd_sam import SCD_SAM
 from cd_models.samcd.SAM_CD import SAM_CD
+from cd_models.SNUNet import SNUNet
 from cd_models.dgma2net import DGMAANet
+from cd_models.lwganet.lwclafr import CLAFR_LWGA
+from cd_models.lwganet.lwa2net import A2Net_LWGANet_L2
 from cd_models.lkmamba_cd import LKMamba_CD
 from cdmamba.model import VMamba_CD
 
@@ -94,8 +97,11 @@ if __name__ == "__main__":
     print("main")
     args = parse_args()
     # model = build_STMambaSCD(args)
-    # model = DGMAANet(3,2)
-    model = VMamba_CD() #(imgsz=args.img_size, device='cuda:1')
+    # model = SNUNet(3,2, out_size=[args.img_size, args.img_size])
+    model = USSFCNet(3)
+    # model = DMINet()
+    # model = DGMAANet(3, 2)
+    # model = VMamba_CD() #(imgsz=args.img_size, device='cuda:1')
     w = Work(model, args)
     
     

@@ -165,7 +165,7 @@ class DMINet(nn.Module):
         print("model output: G_pred1, G_pred2, G_middle1, G_middle2, pred is pred1+pred2")
         self.show_Feature_Maps = show_Feature_Maps
         
-        self.resnet = resnet18()
+        self.resnet = resnet18(pretrained=False)
         # self.resnet.load_state_dict(torch.load('./pretrained/resnet18-5c106cde.pth'))
         self.resnet.layer4 = nn.Identity()
 

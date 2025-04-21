@@ -507,9 +507,7 @@ def LWGANet_L0_1242_e32_k11_GELU(num_classes: int = 1000, **kwargs):
                     att_kernel=(11, 11, 11, 11),
                     norm_layer=nn.BatchNorm2d,
                     act_layer=nn.GELU,
-                    drop_path_rate=0.0,
                     fork_feat=False,
-                    pretrained=r"/home/jq/Code/weights/lwganet/lwganet_l0_e299.pth",
                     **kwargs)
 
     return model
@@ -523,7 +521,6 @@ def LWGANet_L1_1242_e64_k11_GELU(num_classes: int = 1000, **kwargs):
                     att_kernel=(11, 11, 11, 11),
                     norm_layer=nn.BatchNorm2d,
                     act_layer=nn.GELU,
-                    drop_path_rate=0.1,
                     fork_feat=False,
                     pretrained=r"/home/jq/Code/weights/lwganet/lwganet_l1_e299.pth",
                     **kwargs)
@@ -538,8 +535,6 @@ def LWGANet_L2_1442_e96_k11_ReLU(num_classes: int = 1000, **kwargs):
                     att_kernel=(11, 11, 11, 11),
                     norm_layer=nn.BatchNorm2d,
                     act_layer=nn.ReLU,
-                    drop_path_rate=0.1,
                     fork_feat=False,
-                    pretrained=r"/home/jq/Code/weights/lwganet/lwganet_l2_e296.pth",
                     **kwargs)
     return model

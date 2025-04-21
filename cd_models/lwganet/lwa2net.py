@@ -2,7 +2,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from cd_models.mobilenetv2 import MobileNetV2
-from .lwganet import LWGANet
+from .lwganet import LWGANet_L0_1242_e32_k11_GELU, LWGANet_L2_1442_e96_k11_ReLU
+
+
+def get_backbone(backbone_name, dropout_rate):
+    if backbone_name == 'lwganet_l2':
+        backbone = LWGANet_L2_1442_e96_k11_ReLU(pretrained=r"/home/jq/Code/weights/lwganet/lwganet_l2_e296.pth", drop_path_rate=dropout_rate)
+        backbone.channels = [96, 192, 384, 768]
+    elif backbone_name == 'lwganet_l0':
+        backbone = LWGANet_L0_1242_e32_k11_GELU(pretrained=r"/home/jq/Code/weights/lwganet/lwganet_l0_e299.pth", drop_path_rate=dropout_rate)
+        backbone.channels = [32, 64, 128, 256]
+    else:
+        raise NotImplementedError("BACKBONE [%s] is not implemented!\n" % backbone_name)
+    return backbone
 
 
 class NeighborFeatureAggregation(nn.Module):
@@ -252,7 +264,7 @@ class Decoder(nn.Module):
             nn.BatchNorm2d(self.mid_d),
             nn.ReLU(inplace=True)
         )
-        self.cls = nn.Conv2d(self.mid_d, 1, kernel_size=1)
+        self.cls = nn.Conv2d(self.mid_d, 2, kernel_size=1)
 
     def forward(self, d2, d3, d4, d5):
         # high-level
@@ -307,7 +319,7 @@ class BaseNet_MobileNetv2(nn.Module):
 class BaseNet_LWGANet_L0(nn.Module):
     def __init__(self, pretrained=True):
         super().__init__()
-        self.backbone = LWGANet.LWGANet_L0_1242_e32_k11_GELU(pretrained=pretrained)
+        self.backbone = get_backbone("lwganet_l0")
         channles = [32, 32, 64, 128, 256]
         self.en_d = 32
         self.mid_d = self.en_d * 2
@@ -342,7 +354,7 @@ class BaseNet_LWGANet_L0(nn.Module):
 class A2Net_LWGANet_L2(nn.Module):
     def __init__(self, pretrained=True):
         super().__init__()
-        self.backbone = LWGANet.LWGANet_L2_1242_e96_k11_RELU(pretrained=pretrained)
+        self.backbone = get_backbone("lwganet_l2", 0.1)
         channles = [96, 96, 192, 384, 768]
         self.en_d = 32
         self.mid_d = self.en_d * 2
@@ -372,4 +384,4 @@ class A2Net_LWGANet_L2(nn.Module):
         mask_p5 = F.interpolate(mask_p5, scale_factor=(32, 32), mode='bilinear')
         mask_p5 = torch.sigmoid(mask_p5)
 
-        return mask_p2, mask_p3, mask_p4, mask_p5
+        return  mask_p2#, mask_p3, mask_p4, mask_p5

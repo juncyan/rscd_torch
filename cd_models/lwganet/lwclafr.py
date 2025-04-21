@@ -7,7 +7,7 @@ from .block.fpn import FPN
 from .block.vertical import VerticalFusion
 from .block.convs import ConvBnRelu, DsBnRelu
 from .block.heads import FCNHead, GatedResidualUpHead
-from .lwganet import LWGANet_L2_1242_e96_k11_RELU, LWGANet_L0_1242_e32_k11_GELU
+from .lwganet import LWGANet_L0_1242_e32_k11_GELU, LWGANet_L2_1442_e96_k11_ReLU
 
 
 def get_backbone(backbone_name, dropout_rate):
@@ -18,10 +18,10 @@ def get_backbone(backbone_name, dropout_rate):
         backbone = timm.create_model('resnet18d', pretrained=True, features_only=True)
         backbone.channels = [64, 64, 128, 256, 512]
     elif backbone_name == 'lwganet_l2':
-        backbone = LWGANet_L2_1242_e96_k11_RELU(pretrained=True, drop_path_rate=dropout_rate)
+        backbone = LWGANet_L2_1442_e96_k11_ReLU(pretrained=r"/home/jq/Code/weights/lwganet/lwganet_l2_e296.pth", drop_path_rate=dropout_rate)
         backbone.channels = [96, 192, 384, 768]
     elif backbone_name == 'lwganet_l0':
-        backbone = LWGANet_L0_1242_e32_k11_GELU(pretrained=True, drop_path_rate=dropout_rate)
+        backbone = LWGANet_L0_1242_e32_k11_GELU(pretrained=r"/home/jq/Code/weights/lwganet/lwganet_l0_e299.pth", drop_path_rate=dropout_rate)
         backbone.channels = [32, 64, 128, 256]
     else:
         raise NotImplementedError("BACKBONE [%s] is not implemented!\n" % backbone_name)
@@ -65,6 +65,7 @@ class CLAFR_LWGA(nn.Module):
         #             self.p3_head, self.p2_head, init_type=init_type)
 
     def forward(self, x1, x2):
+        sz = x1.shape[-2:]
         ### Extract backbone features
         if self.backbone_name == 'lwganet_l0' or self.backbone_name == 'lwganet_l2':
             t1_c2, t1_c3, t1_c4, t1_c5 = self.backbone.forward(x1)
@@ -90,11 +91,11 @@ class CLAFR_LWGA(nn.Module):
         pred_p2 = self.p2_head(fea_p2)
         pred = self.head(fea_p2)
 
-        pred_p2 = F.interpolate(pred_p2, size=(256, 256), mode='bilinear', align_corners=False)
-        pred_p3 = F.interpolate(pred_p3, size=(256, 256), mode='bilinear', align_corners=False)
-        pred_p4 = F.interpolate(pred_p4, size=(256, 256), mode='bilinear', align_corners=False)
-        pred_p5 = F.interpolate(pred_p5, size=(256, 256), mode='bilinear', align_corners=False)
+        pred_p2 = F.interpolate(pred_p2, size=sz, mode='bilinear', align_corners=False)
+        pred_p3 = F.interpolate(pred_p3, size=sz, mode='bilinear', align_corners=False)
+        pred_p4 = F.interpolate(pred_p4, size=sz, mode='bilinear', align_corners=False)
+        pred_p5 = F.interpolate(pred_p5, size=sz, mode='bilinear', align_corners=False)
 
-        return pred, pred_p2, pred_p3, pred_p4, pred_p5
+        return pred #, pred_p2, pred_p3, pred_p4, pred_p5
 
 
