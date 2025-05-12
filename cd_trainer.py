@@ -98,9 +98,11 @@ if __name__ == "__main__":
     args = parse_args()
     # model = build_STMambaSCD(args)
     # model = SNUNet(3,2, out_size=[args.img_size, args.img_size])
-    model = USSFCNet(3)
+    # model = USSFCNet(3)
     # model = DMINet()
     # model = DGMAANet(3, 2)
+    # model = CLAFR_LWGA()
+    model = SAM_CD(imgsz=args.img_size, device=f"cuda:{args.device}")
     # model = VMamba_CD() #(imgsz=args.img_size, device='cuda:1')
     w = Work(model, args)
     

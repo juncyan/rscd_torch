@@ -66,6 +66,18 @@ class Classifier(nn.Module):
         return x
 
 class MeGNet(nn.Module):
+#     ```
+# @ARTICLE{10579791,
+#   author={Liu, Mengxi and Lin, Simin and Zhong, Yutong and Shi, Qian and Li, Jiaqi},
+#   journal={IEEE Transactions on Geoscience and Remote Sensing}, 
+#   title={A Memory Guided Network and A Novel Dataset for Cropland Semantic Change Detection}, 
+#   year={2024},
+#   volume={},
+#   number={},
+#   pages={1-1},
+#   keywords={Semantics;Feature extraction;Task analysis;Transformers;Land surface;Soil;Plantations;Remote sensing;semantic change detection;deep learning;memory;Transformer},
+#   doi={10.1109/TGRS.2024.3421654}}
+# ```
     def __init__(self,  backbone='Swin_tiny_p4w7', output_stride=32, pretrained = True, img_size = 512, img_chan=3, chan_num = 32, n_class =2,pretrained_path='./checkpoints'):
         super(MeGNet, self).__init__()
         BatchNorm = nn.BatchNorm2d

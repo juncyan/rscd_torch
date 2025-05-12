@@ -84,15 +84,15 @@ class ResBlock(nn.Module):
 
 class SAM_CD(nn.Module):
 #     @ARTICLE{10443350,
-#   author={Ding, Lei and Zhu, Kun and Peng, Daifeng and Tang, Hao and Yang, Kuiwu and Bruzzone, Lorenzo},
-#   journal={IEEE Transactions on Geoscience and Remote Sensing}, 
-#   title={Adapting Segment Anything Model for Change Detection in VHR Remote Sensing Images}, 
-#   year={2024},
-#   volume={62},
-#   number={},
-#   pages={1-11},
-#   keywords={Semantics;Feature extraction;Image segmentation;Task analysis;Adaptation models;Computational modeling;Visualization;Change detection (CD);convolutional neural network (CNN);remote sensing (RS);segment anything model (SAM);vision foundation models (VFMs)},
-#   doi={10.1109/TGRS.2024.3368168}}
+    #   author={Ding, Lei and Zhu, Kun and Peng, Daifeng and Tang, Hao and Yang, Kuiwu and Bruzzone, Lorenzo},
+    #   journal={IEEE Transactions on Geoscience and Remote Sensing}, 
+    #   title={Adapting Segment Anything Model for Change Detection in VHR Remote Sensing Images}, 
+    #   year={2024},
+    #   volume={62},
+    #   number={},
+    #   pages={1-11},
+    #   keywords={Semantics;Feature extraction;Image segmentation;Task analysis;Adaptation models;Computational modeling;Visualization;Change detection (CD);convolutional neural network (CNN);remote sensing (RS);segment anything model (SAM);vision foundation models (VFMs)},
+    #   doi={10.1109/TGRS.2024.3368168}}
     def __init__(
         self,
         imgsz: int=1024,

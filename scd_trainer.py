@@ -16,8 +16,8 @@ from cd_models.daudt.HRSCD3 import HRSCD3
 from cd_models.daudt.HRSCD4 import HRSCD4
 from cd_models.ssesn import SSESN
 from cd_models.cdsc import CDSC
-from scdmodel.scd import SCDSam_CrossA
-from scdmodel.sam_mamba import SCDSamMamba, SCDSamMambaLK
+# from scdmodel.scd import SCDSam_CrossA
+# from scdmodel.sam_mamba import SCDSamMamba, SCDSamMambaLK
 
 from core.scdwork import Work
 # from core.secondwork import Work
@@ -79,7 +79,8 @@ if __name__ == "__main__":
     # model = SCD_SAM(input_size=args.img_size, num_classes=args.num_classes)
     # model = CDSC(output_nc=args.num_classes)
     # model = HRSCD4(3, args.num_classes)
-    model = SCDSamMambaLK(img_size=args.img_size, num_seg=args.num_classes)
+    model = BiSRNet(num_classes=args.num_classes)
+    # model = SCDSamMambaLK(img_size=args.img_size, num_seg=args.num_classes)
     w = Work(model, args)
     
     

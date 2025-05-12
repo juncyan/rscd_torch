@@ -114,11 +114,11 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
                 cdm = np.array(cdm.squeeze(), np.uint8)
                 if np.max(cdm) == np.min(cdm):
                     continue
-                flag_local = (gt[idx] - cdm)
-                cdm[flag_local == -1] = 2
-                cdm[flag_local == 1] = 3
+                # flag_local = (gt[idx] - cdm)
+                # cdm[flag_local == -1] = 2
+                # cdm[flag_local == 1] = 3
                 name = file[idx]
-                cdm = change_color[cdm]
+                # cdm = change_color[cdm]
                 is1 = label_info[is1]
                 is2 = label_info[is2]
                 io.imsave(f"{img_dir}/{name}", np.uint8(cdm))
@@ -246,11 +246,11 @@ def test(model, dataloader_test, args):
                 cdm = np.array(cdm.squeeze(), np.uint8)
                 if np.max(cdm) == np.min(cdm):
                     continue
-                flag_local = (gt[idx] - cdm)
-                cdm[flag_local == -1] = 2
-                cdm[flag_local == 1] = 3
+                # flag_local = (gt[idx] - cdm)
+                # cdm[flag_local == -1] = 2
+                # cdm[flag_local == 1] = 3
                 name = file[idx]
-                cdm = change_color[cdm]
+                # cdm = change_color[cdm]
                 is1 = args.label_info[is1]
                 is2 = args.label_info[is2]
                 io.imsave(f"{img_dir}/{name}", np.uint8(cdm))
