@@ -9,9 +9,9 @@ import os
 
 # 模型导入
 from cd_models.ultralight_unet import UltraLightUNet
-# from cd_models.unet import net_factory
+from cd_models.unet import net_factory
 
-from models.model_seg import RepLKSSM_Seg
+from models.fgfp import FGFPVM_Seg
 from core.segwork import Work
 
 # dataset_name = "GVLM_CD"
@@ -66,8 +66,8 @@ if __name__ == "__main__":
     print("main")
     args = parse_args()
     # model = UltraLightUNet(num_classes=args.num_classes)
-    model = RepLKSSM_Seg(args.num_classes)
-    # model = net_factory('mambau', 3, args.num_classes, img_size=args.img_size)
+    # model = RepLKSSM_Seg(args.num_classes)
+    model = FGFPVM_Seg(args.img_size, args.num_classes)
     w = Work(model, args)
     
     

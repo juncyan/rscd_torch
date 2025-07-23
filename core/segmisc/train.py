@@ -37,7 +37,7 @@ def train(model, dataloader_train, dataloader_eval, dataloader_test, args):
             image = image.to(args.device)
             label = label.to(args.device)
 
-            label = torch.argmax(label, 1)
+            # label = torch.argmax(label, 1)
             preds = model(image)
             
             optimizer.zero_grad()  

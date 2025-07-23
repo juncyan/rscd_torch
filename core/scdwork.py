@@ -38,7 +38,7 @@ class Work():
         self.args.traindata_num = train_data.__len__()
         self.args.val_num = val_data.__len__()
         self.args.test_num =test_data.__len__()
-        self.args.label_info = np.uint8(np.transpose(train_data.label_info.values, [1,0]))
+        self.args.label_info = np.uint8(np.transpose(test_data.label_info.values, [1,0]))
 
         self.val_loader = DataLoader(dataset=val_data, batch_size=self.args.batch_size, num_workers=self.args.num_workers,
                                     shuffle=False, drop_last=True)

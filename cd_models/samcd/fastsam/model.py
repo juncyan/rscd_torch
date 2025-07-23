@@ -20,7 +20,6 @@ from .predict import FastSAMPredictor
 
 
 class FastSAM(YOLO):
-
     @smart_inference_mode()
     def predict(self, source=None, stream=False, **kwargs):
         """

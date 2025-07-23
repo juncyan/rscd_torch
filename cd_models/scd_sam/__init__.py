@@ -1,1 +1,1 @@
-from .scd_sam import SCD_SAM
+from .scd_sam import SCD_SAM, SCD_SAM_BCD

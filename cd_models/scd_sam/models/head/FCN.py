@@ -75,3 +75,24 @@ class FCNHead(nn.Module):
 
         return change_s1, change_s2, change
 
+class FCNHeadCD(nn.Module):
+    def __init__(self, in_channels, s_channels, b_channels):
+        super().__init__()
+        inter_channels = in_channels
+        # self.head1 = nn.Sequential(Conv3Relu(in_channels, inter_channels),
+        #                           nn.Dropout(0.2),  # 使用0.1的dropout
+        #                           nn.Conv2d(inter_channels, s_channels, (1, 1)))
+        # self.head2 = nn.Sequential(Conv3Relu(in_channels, inter_channels),
+        #                           nn.Dropout(0.2),  # 使用0.1的dropout
+        #                           nn.Conv2d(inter_channels, s_channels, (1, 1)))
+        self.head3 = nn.Sequential(Conv3Relu(in_channels, inter_channels),
+                                  nn.Dropout(0.2),  # 使用0.1的dropout
+                                  nn.Conv2d(inter_channels, b_channels, (1, 1)))
+
+    def forward(self, change, out_size):
+        # change_s1 = F.interpolate(self.head1(change_s1), size=out_size, mode='bilinear', align_corners=True)
+        # change_s2 = F.interpolate(self.head2(change_s2), size=out_size, mode='bilinear', align_corners=True)
+        change = F.interpolate(self.head3(change), size=out_size, mode='bilinear', align_corners=True)
+
+        return change
+

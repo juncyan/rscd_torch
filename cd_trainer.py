@@ -32,15 +32,18 @@ from cd_models.hanet import HAN
 from cd_models.cgnet import CGNet
 from cd_models.isdanet import ISDANet
 # from cd_models.rsmamba import RSMamba_CD
-# from cd_models.mambacd import build_STMambaSCD
+from cd_models.mambacd import build_STMambaBCD
 from cd_models.scd_sam import SCD_SAM
-from cd_models.samcd.SAM_CD import SAM_CD
+from cd_models.samcd import SAM_CD, Meta_CD
+from cd_models.scd_sam import SCD_SAM_BCD
 from cd_models.SNUNet import SNUNet
 from cd_models.dgma2net import DGMAANet
 from cd_models.lwganet.lwclafr import CLAFR_LWGA
 from cd_models.lwganet.lwa2net import A2Net_LWGANet_L2
 from cd_models.lkmamba_cd import LKMamba_CD
 from cdmamba.model import VMamba_CD
+from cd_models.unet_pytorch import UNet
+from cd_models.eafhnet import EAFHNet
 
 from core.bcdwork import Work
 
@@ -96,14 +99,18 @@ if __name__ == "__main__":
     # 代码运行预处理
     print("main")
     args = parse_args()
-    # model = build_STMambaSCD(args)
+    # model = build_STMambaBCD(args)
     # model = SNUNet(3,2, out_size=[args.img_size, args.img_size])
     # model = USSFCNet(3)
     # model = DMINet()
     # model = DGMAANet(3, 2)
     # model = CLAFR_LWGA()
-    model = SAM_CD(imgsz=args.img_size, device=f"cuda:{args.device}")
+    # model = SAM_CD(imgsz=args.img_size, device=f"cuda:{args.device}")
     # model = VMamba_CD() #(imgsz=args.img_size, device='cuda:1')
+    # model = UNet(6,2)
+    # model = EAFHNet()
+    model = SCD_SAM_BCD(input_size=args.img_size)
+    # model = Meta_CD(dev=args.device)
     w = Work(model, args)
     
     

@@ -16,6 +16,8 @@ from cd_models.daudt.HRSCD3 import HRSCD3
 from cd_models.daudt.HRSCD4 import HRSCD4
 from cd_models.ssesn import SSESN
 from cd_models.cdsc import CDSC
+from cd_models.btscd import BTSCD
+from cd_models.cienet import FESCD_VMB
 # from scdmodel.scd import SCDSam_CrossA
 # from scdmodel.sam_mamba import SCDSamMamba, SCDSamMambaLK
 
@@ -57,9 +59,9 @@ def parse_args():
                         help='w-decay (default: 5e-4)')
     parser.add_argument('--num_workers', type=int, default=16,
                         help='num_workers (default: 16)')
-    parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/vmamba/configs/vssm_base_224.yaml',
-                        help='train mamba')
-    parser.add_argument('--pretrained_weight_path', type=str, default="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth")
+    # parser.add_argument('--cfg', type=str, default='/home/jq/Code/torch/cd_models/vmamba/configs/vssm_base_224.yaml',
+    #                     help='train mamba')
+    # parser.add_argument('--pretrained_weight_path', type=str, default="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth")
     parser.add_argument(
         "--opts",
         help="Modify config options by adding 'KEY VALUE' pairs. ",
@@ -78,9 +80,12 @@ if __name__ == "__main__":
     # model = SSCDl(in_channels=3, num_classes=args.num_classes)
     # model = SCD_SAM(input_size=args.img_size, num_classes=args.num_classes)
     # model = CDSC(output_nc=args.num_classes)
+    # model = SSESN(n_classes=args.num_classes)
     # model = HRSCD4(3, args.num_classes)
-    model = BiSRNet(num_classes=args.num_classes)
+    # model = BiSRNet(num_classes=args.num_classes)
     # model = SCDSamMambaLK(img_size=args.img_size, num_seg=args.num_classes)
+    # model = FESCD_VMB(args.img_size, args.num_classes)
+    model = BTSCD(num_classes=args.num_classes)
     w = Work(model, args)
     
     

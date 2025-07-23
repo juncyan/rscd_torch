@@ -63,7 +63,10 @@ class STMambaBCD(nn.Module):
         _, _, H, W = y.size()
         return F.interpolate(x, size=(H, W), mode='bilinear') + y
 
-    def forward(self, pre_data, post_data):
+    def forward(self, pre_data, post_data=None):
+        if post_data is None:
+            post_data = pre_data[:,3:,:,:]
+            pre_data = pre_data[:,:3,:,:]
         # Encoder processing
         pre_features = self.encoder(pre_data)
         post_features = self.encoder(post_data)
@@ -87,8 +90,12 @@ class STMambaBCD(nn.Module):
         main_loss = ce_loss_1 + 0.75 * lovasz_loss
         return main_loss
 
+mamba_version_weights = {"vssm_base_224.yaml":"/home/jq/Code/weights/vssm_base_0229_ckpt_epoch_237.pth",
+                         "vssm_small_224.yaml":"/home/jq/Code/weights/vssm_small_0229_ckpt_epoch_222.pth",
+                         "vssm_tiny_224.yaml":"/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth"}
+
 class Args:
-    cfg = '/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_base_224.yaml'
+    cfg = '/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_tiny_224.yaml'
     opts = None
     
 
@@ -97,7 +104,7 @@ def build_STMambaBCD(args):
     config = get_config(mparas)
     # config = get_config(args)
     model = STMambaBCD(
-            pretrained="/home/jq/Code/weights/vssm_base_0229_ckpt_epoch_237.pth",
+            pretrained="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth",
             patch_size=config.MODEL.VSSM.PATCH_SIZE, 
             in_chans=config.MODEL.VSSM.IN_CHANS, 
             num_classes=config.MODEL.NUM_CLASSES, 
