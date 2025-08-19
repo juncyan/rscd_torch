@@ -1,15 +1,8 @@
-# 调用官方库及第三方库
-import torch
-import numpy as np
 import argparse
-import datetime
-import platform
-import random
-import os
 
 # 模型导入
-from cd_models.ultralight_unet import UltraLightUNet
-from cd_models.unet import net_factory
+# from cd_models.ultralight_unet import UltraLightUNet
+# from cd_models.unet import net_factory
 
 from models.fgfp import FGFPVM_Seg
 from core.segwork import Work

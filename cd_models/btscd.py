@@ -53,7 +53,7 @@ class FCN(nn.Module):
 
 
 class BTSCD(nn.Module):
-#     @ARTICLE{11015343,
+#  @ARTICLE{11015343,
 #   author={Tang, Yingjie and Feng, Shou and Zhao, Chunhui and Chen, Yongqi and Lv, Zhiyong and Sun, Weiwei},
 #   journal={IEEE Transactions on Neural Networks and Learning Systems}, 
 #   title={A Semantic Change Detection Network Based on Boundary Detection and Task Interaction for High-Resolution Remote Sensing Images}, 
@@ -86,7 +86,6 @@ class BTSCD(nn.Module):
             nn.Conv2d(32, 1, 1, 1, 0),
             nn.Sigmoid()
         )
-
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1):
         downsample = None

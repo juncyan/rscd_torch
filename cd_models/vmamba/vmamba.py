@@ -16,10 +16,12 @@ from fvcore.nn import FlopCountAnalysis, flop_count_str, flop_count, parameter_c
 DropPath.__repr__ = lambda self: f"timm.DropPath({self.drop_prob})"
 
 # triton cross scan, 2x speed than pytorch implementation =========================
-try:
-    from .csm_triton import CrossScanTriton, CrossMergeTriton, CrossScanTriton1b1
-except:
-    from csm_triton import CrossScanTriton, CrossMergeTriton, CrossScanTriton1b1
+# try:
+#     from .csm_triton import CrossScanTriton, CrossMergeTriton, CrossScanTriton1b1
+# except:
+#     from csm_triton import CrossScanTriton, CrossMergeTriton, CrossScanTriton1b1
+
+from .csm_triton import CrossScanTriton, CrossMergeTriton, CrossScanTriton1b1
 
 # pytorch cross scan =============
 class CrossScan(torch.autograd.Function):

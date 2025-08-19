@@ -13,11 +13,12 @@
 # limitations under the License.
 
 import os
-import cv2
+# import cv2
 import numpy as np
 import torch
 import pandas as pd
 import glob
+import imageio
 from torch.utils.data import DataLoader
 import datetime 
 from thop import profile
@@ -95,7 +96,7 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
                     ipred[flag == -1] = 2
                     ipred[flag == 1] = 3
                     img = color_label[ipred]
-                    cv2.imwrite(f"{img_dir}/{name[idx]}", img)
+                    imageio.imwrite(f"{img_dir}/{name[idx]}", np.uint8(img))
 
     evaluator.calc()
     miou = evaluator.Mean_Intersection_over_Union()
@@ -191,7 +192,7 @@ def test(model, dataset, args=None):
                     ipred[flag == -1] = 2
                     ipred[flag == 1] = 3
                     img = color_label[ipred]
-                    cv2.imwrite(f"{img_dir}/{name[idx]}", img)
+                    imageio.imwrite(f"{img_dir}/{name[idx]}", np.uint8(img))
 
     evaluator.calc()
     miou = evaluator.Mean_Intersection_over_Union()
@@ -225,7 +226,7 @@ def test(model, dataset, args=None):
     img_files = glob.glob(os.path.join(img_dir, '*.png'))
     data = []
     for img_path in img_files:
-        img = cv2.imread(img_path)
+        img = imageio.imread(img_path)
         lab = cls_count(img)
         # lab = np.argmax(lab, -1)
         data.append(lab)
@@ -236,7 +237,7 @@ def test(model, dataset, args=None):
 
 def cls_count(label):
     cls_nums = []
-    color_label = np.array([[0, 0, 0], [255, 255, 255], [0, 128, 0], [0, 0, 128]])
+    color_label = np.array([[0, 0, 0], [255, 255, 255], [0, 128, 0], [128, 0, 0]])
     for info in color_label:
         color = info
         # print("label:\n", label.shape,label)
