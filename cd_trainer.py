@@ -39,14 +39,13 @@ from cd_models.SNUNet import SNUNet
 from cd_models.dgma2net import DGMAANet
 from cd_models.lwganet.lwclafr import CLAFR_LWGA
 from cd_models.lwganet.lwa2net import A2Net_LWGANet_L2
-from cd_models.lkmamba_cd import LKMamba_CD
 from cd_models.unet_pytorch import UNet
 from cd_models.eafhnet import EAFHNet
 from cd_models.mfnet import MFNet
 
 from cd_models.unet import net_factory
 
-from models.fgfp import FGFPVM_CD
+from lkmamba_cd import LKMamba_CD
 
 from core.bcdwork import Work
 
