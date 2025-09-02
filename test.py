@@ -17,11 +17,14 @@ from cd_models.eafhnet import EAFHNet
 from cd_models.samcd import Meta_CD
 from cd_models.afcf3dnet import AFCF3D
 from cd_models.mfnet import MFNet
-
+from models.mbrconv import MBRConv5
+from models.fgfp import FGFPVM_CD
 
 # pip install torch==2.1.1 torchvision==0.16.1 torchaudio==2.1.1 --index-url https://download.pytorch.org/whl/cu118
 # m = FGFPVM_Seg(img_size=512, num_cls=7).cuda()
-m = MFNet().cuda(1)
-x = torch.randn(1, 3, 512, 512).cuda(1)
-y = m(x, x)
+x = torch.rand([8, 3, 256, 256]).cuda(1)
+
+m = FGFPVM_CD(256).cuda(1)
+
+y= m (x,x)
 print(y.shape)

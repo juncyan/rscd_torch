@@ -335,7 +335,8 @@ class CoarseInteractiveFeaturesExtraction(nn.Module):
     
     def forward(self, x1, x2):
         B, C, H, W = x1.shape
-        x = torch.empty([B, 2*C, H, W], dtype=x1.dtype).cuda()
+        device = x1.device
+        x = torch.empty([B, 2*C, H, W], dtype=x1.dtype).cuda(device)
         x[:, 0::2, ...] = x1
         x[:, 1::2, ...] = x2
 

@@ -27,7 +27,10 @@ class LKMamba_CD(nn.Module):
         for param in self.encoder.parameters():
             param.requires_grad = False
 
-    def forward(self, x1, x2):
+    def forward(self, x1, x2=None):
+        if x2 == None:
+            x2 = x1[:, 3:, :, :]
+            x1 = x1[:, :3, :, :]
         f1_list = self.encoder(x1)
         f2_list = self.encoder(x2)
         

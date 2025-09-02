@@ -45,9 +45,8 @@ class SCD_SAM(nn.Module):
         self.conv4 = Conv1Relu(self.inplanes*16, self.inplanes*8)
 
         self.SAM_Encoder.eval()
-        for param in self.SAM_Encoder.parameters():
-            param.requires_grad = False
-
+        # for param in self.SAM_Encoder.parameters():
+        #     param.requires_grad = False
 
     def forward(self, xa, xb):
         _, _, h_input, w_input = xa.shape

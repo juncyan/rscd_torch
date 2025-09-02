@@ -12,27 +12,57 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat
 from cd_models.vmamba.mamba_backbone import VSSM, Backbone_VSSM
+from .sam_adaptor import build_sam_vit_t
 from .modules import Decoder, CoarseInteractiveFeaturesExtraction, MultiScaleFeatureGather, ParallChangeInformationFusion
 
 class FGFPVM_Seg(nn.Module):
     #Fine-Grained Feature Processing for Segmentation
     def __init__(self, img_size, num_cls):
         super().__init__()
-        self.bk = Backbone_VSSM()
-        self.bk.eval()
+        self.bk = build_sam_vit_t(img_size=img_size)
         self.img_size = [img_size, img_size]
         
-        self.msfg1 = MultiScaleFeatureGather(96)
-        self.msfg2 = MultiScaleFeatureGather(768)
-        self.pcif = ParallChangeInformationFusion(768, 96, 64)
+        self.msfg1 = MultiScaleFeatureGather(128)
+        self.msfg2 = MultiScaleFeatureGather(256)
+        self.pcif = ParallChangeInformationFusion(256, 128, 64)
         # self.decoder = Decoder(img_size=img_size, channels=[64,256])
-        self.cls = nn.Conv2d(64, num_cls, 1, 1, 0)
+        self.cls = nn.Conv2d(64, num_cls, 3, 1, 1)
+
+        self.bk.eval()
+        for param in self.bk.parameters():
+            param.requires_grad = False
+            
 
     
-    def encoder(self, x):   
-        y0, _,_, y1 = self.bk(x)
-        
-        return y0, y1
+    def encoder(self, x):
+        x = self.bk.image_encoder.patch_embed(x)
+        x = self.bk.image_encoder.layers[0](x)
+        x0 = x
+        B,N,C = x0.size()
+        WH = int(np.sqrt(N))
+        x0 = x0.view(B, WH, WH, C)
+        x0 = x0.permute(0, 3, 1, 2)
+    
+        start_i = 1
+        # features=[x]
+        B,N,C=x.size()
+        WH=int(np.sqrt(N))
+        x1 = x.view(B, WH, WH, C)
+        x1=x1.permute(0, 3, 1, 2)
+        for i in range(start_i, len(self.bk.image_encoder.layers)):
+            layer = self.bk.image_encoder.layers[i]
+            x = layer(x)
+            # x2=self.convert(x)
+            # features.append(x)
+     
+        B,N,C=x.size()
+                                    
+        WH=int(np.sqrt(N))
+        x= x.view(B, WH, WH, C)
+        x=x.permute(0, 3, 1, 2)
+        x=self.bk.image_encoder.neck(x)
+        # features.append(x)
+        return x0, x
 
     def forward(self, x):
 
@@ -50,8 +80,8 @@ class FGFPVM_CD(FGFPVM_Seg):
     def __init__(self, img_size):
         super().__init__(img_size=img_size, num_cls=2)
         # self.img_size = img_size
-        self.df1 = CoarseInteractiveFeaturesExtraction(32)
-        self.df2 = CoarseInteractiveFeaturesExtraction(960)
+        self.df1 = CoarseInteractiveFeaturesExtraction(128)
+        self.df2 = CoarseInteractiveFeaturesExtraction(256)
     
     def forward(self, x1, x2=None):
         if x2 is None:
@@ -79,11 +109,11 @@ class FGFPVM_SCD(FGFPVM_Seg):
     def __init__(self, img_size, num_seg=7):
         super().__init__(img_size=img_size, num_cls=1)
 
-        self.df1 = CoarseInteractiveFeaturesExtraction(32)
-        self.df2 = CoarseInteractiveFeaturesExtraction(960)
+        self.df1 = CoarseInteractiveFeaturesExtraction(128)
+        self.df2 = CoarseInteractiveFeaturesExtraction(256)
 
-        self.pcif2 = ParallChangeInformationFusion(960, 32, 32)
-        self.scls1 = nn.Conv2d(32, num_seg, 3, 1, 1)
+        self.pcif2 = ParallChangeInformationFusion(256, 128, 64)
+        self.scls1 = nn.Conv2d(64, num_seg, 3, 1, 1)
     
     def forward(self, x1, x2=None):
         if x2 is None:

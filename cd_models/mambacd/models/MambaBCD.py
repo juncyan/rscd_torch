@@ -95,16 +95,16 @@ mamba_version_weights = {"vssm_base_224.yaml":"/home/jq/Code/weights/vssm_base_0
                          "vssm_tiny_224.yaml":"/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth"}
 
 class Args:
-    cfg = '/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_tiny_224.yaml'
+    cfg = '/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_base_224.yaml'
     opts = None
     
 
-def build_STMambaBCD(args):
+def build_STMambaBCD():
     mparas = Args()
     config = get_config(mparas)
     # config = get_config(args)
     model = STMambaBCD(
-            pretrained="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth",
+            pretrained="/home/jq/Code/weights/vssm_base_0229_ckpt_epoch_237.pth",
             patch_size=config.MODEL.VSSM.PATCH_SIZE, 
             in_chans=config.MODEL.VSSM.IN_CHANS, 
             num_classes=config.MODEL.NUM_CLASSES, 

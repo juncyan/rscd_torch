@@ -8,43 +8,45 @@ import random
 import os
 
 # 模型导入
-
-# from cd_models.mscanet.model import MSCANet
-# from cd_models.aernet import AERNet
-# from cd_models.ResUnet import ResUnet
-# from cd_models.a2net import LightweightRSCDNet
-# from cd_models.ussfcnet.ussfcnet import USSFCNet
-# from cd_models.dtcdscn import DTCDSCNet
-# from cd_models.changeformer import ChangeFormerV6
-# from cd_models.dminet import DMINet
-# from cd_models.siamunet_diff import SiamUnet_diff
-# from cd_models.siamunet import SiamUnet_conc
-# from cd_models.SNUNet import SNUNet
-# from cd_models.dsamnet import DSAMNet
-# from cd_models.stanet import STANetSA
-# from cd_models.icifnet import ICIFNet
-# from cd_models.dsifn import DSIFN
-# from cd_models.bit_cd import BIT_CD
-# from cd_models.transunet import TransUNet
-# from cd_models.rdpnet import RDPNet
-# from cd_models.bisrnet import BiSRNet, SSCDl
-# from cd_models.hanet import HAN
-# from cd_models.cgnet import CGNet
-# from cd_models.isdanet import ISDANet
-# from cd_models.rsmamba import RSMamba_CD
-# from cd_models.mambacd import build_STMambaBCD
-# from cd_models.scd_sam import SCD_SAM
-# from cd_models.samcd import SAM_CD, Meta_CD
-# from cd_models.scd_sam import SCD_SAM_BCD
-# from cd_models.SNUNet import SNUNet
-# from cd_models.dgma2net import DGMAANet
-# from cd_models.lwganet.lwclafr import CLAFR_LWGA
-# from cd_models.lwganet.lwa2net import A2Net_LWGANet_L2
-# from cd_models.lkmamba_cd import LKMamba_CD
-# from cdmamba.model import VMamba_CD
-# from cd_models.unet_pytorch import UNet
-# from cd_models.eafhnet import EAFHNet
+from cd_models.mscanet.model import MSCANet
+from cd_models.aernet import AERNet
+from cd_models.ResUnet import ResUnet
+from cd_models.a2net import LightweightRSCDNet
+from cd_models.ussfcnet.ussfcnet import USSFCNet
+from cd_models.dtcdscn import DTCDSCNet
+from cd_models.changeformer import ChangeFormerV6
+from cd_models.dminet import DMINet
+from cd_models.siamunet_diff import SiamUnet_diff
+from cd_models.siamunet import SiamUnet_conc
+from cd_models.SNUNet import SNUNet
+from cd_models.dsamnet import DSAMNet
+from cd_models.stanet import STANetSA
+from cd_models.icifnet import ICIFNet
+from cd_models.dsifn import DSIFN
+from cd_models.bit_cd import BIT_CD
+from cd_models.transunet import TransUNet
+from cd_models.rdpnet import RDPNet
+from cd_models.bisrnet import BiSRNet, SSCDl
+from cd_models.hanet import HAN
+from cd_models.cgnet import CGNet
+from cd_models.isdanet import ISDANet
+from cd_models.rsmamba import RSMamba_CD
+from cd_models.mambacd import build_STMambaBCD
+from cd_models.scd_sam import SCD_SAM
+from cd_models.samcd import SAM_CD, Meta_CD
+from cd_models.scd_sam import SCD_SAM_BCD
+from cd_models.SNUNet import SNUNet
+from cd_models.dgma2net import DGMAANet
+from cd_models.lwganet.lwclafr import CLAFR_LWGA
+from cd_models.lwganet.lwa2net import A2Net_LWGANet_L2
+from cd_models.lkmamba_cd import LKMamba_CD
+from cd_models.unet_pytorch import UNet
+from cd_models.eafhnet import EAFHNet
 from cd_models.mfnet import MFNet
+
+from cd_models.unet import net_factory
+
+from models.fgfp import FGFPVM_CD
 
 from core.bcdwork import Work
 
@@ -97,14 +99,14 @@ if __name__ == "__main__":
     # 代码运行预处理
     print("main")
     args = parse_args()
-    # model = build_STMambaBCD(args)
+    # model = build_STMambaBCD()
     # model = SNUNet(3,2, out_size=[args.img_size, args.img_size])
     # model = USSFCNet(3)
     # model = DMINet()
     # model = DGMAANet(3, 2)
     # model = CLAFR_LWGA()
     # model = SAM_CD(imgsz=args.img_size, device=f"cuda:{args.device}")
-    # model = VMamba_CD() #(imgsz=args.img_size, device='cuda:1')
+    # model = FGFPVM_CD(img_size=args.img_size) #(imgsz=args.img_size, device='cuda:1')
     # model = UNet(6,2)
     # model = EAFHNet()
     # model = SCD_SAM_BCD(input_size=args.img_size)

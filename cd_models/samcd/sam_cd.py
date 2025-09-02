@@ -133,8 +133,9 @@ class SAM_CD(nn.Module):
         self.headC = nn.Sequential(nn.Conv2d(128, 16, kernel_size=1, stride=1, padding=0, bias=False), nn.BatchNorm2d(16), nn.ReLU())
         self.segmenterC = nn.Conv2d(16, 1, kernel_size=1)
                                         
-        for param in self.model.model.parameters():
-            param.requires_grad = False
+        # for param in self.model.model.parameters():
+        #     param.requires_grad = False
+        self.model.model.eval()
         initialize_weights(self.Adapter32, self.Adapter16, self.Adapter8, self.Adapter4, self.Dec2, self.Dec1, self.Dec0,\
                            self.segmenter, self.resCD, self.headC, self.segmenterC)
 

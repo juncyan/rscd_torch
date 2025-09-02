@@ -17,8 +17,10 @@ import numpy as np
 import requests
 
 from cd_models.mambacd import build_STMambaBCD
-
-from core.datasets import SBCDReader
+from cd_models.eafhnet import EAFHNet
+from cd_models.lkmamba_cd import LKMamba_CD
+from cd_models.isdanet import ISDANet
+from core.datasets import SBCDReader, CDReader
 
 
 class SemanticSegmentationTarget:
@@ -26,7 +28,7 @@ class SemanticSegmentationTarget:
         self.category = category
         self.mask = torch.from_numpy(mask)
         if torch.cuda.is_available():
-            self.mask = self.mask.cuda()
+            self.mask = self.mask.cuda(1)
         
     def __call__(self, model_output):
         return (model_output[self.category, :, : ] * self.mask).sum()
@@ -42,20 +44,20 @@ def normalize(img, mean=[0.485, 0.456, 0.406], std=[1, 1, 1]):
         im /= std
         return im
 
-dataset_name = "Second"
+dataset_name = "S2Looking"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 
-wp = r"/home/jq/Code/torch/output/second/STMambaBCD_2025_05_13_23/STMambaBCD_best.pth"
+wp = r"/home/jq/Code/torch/output/s2looking/ISDANet_2025_03_08_14/ISDANet_best.pth"
 layer_state_dict = torch.load(f"{wp}")
 
-model = build_STMambaBCD(None)
-model_name = "STMamba_v4"#model.__str__().split("(")[0]
-target_layers = [model.decoder.fuse_layer_4]
-
+model = ISDANet()
+model_name = "ISDANet"#model.__str__().split("(")[0]
+target_layers = [model.output]  # for MambaBCD
+print(model_name)
 model.load_state_dict(layer_state_dict)
 model = model.eval()
-model = model.cuda()
-test_data = SBCDReader(dataset_path, mode="test")
+model = model.cuda(1)
+test_data = CDReader(dataset_path, mode="test")
 loader = DataLoader(dataset=test_data, batch_size=1, num_workers=0,shuffle=True, drop_last=True)
 
 save_dir = f"/mnt/data/Results/cam/{dataset_name}/{model_name}"
@@ -65,7 +67,7 @@ if not os.path.exists(save_dir):
 color_label = np.array([[0,0,0],[255,255,255]])
 for im1, im2, l1, na in tqdm(loader):
     
-    tensor = torch.cat([im1, im2], 1).cuda()
+    tensor = torch.cat([im1, im2], 1).cuda(1)
     img1 = im1.squeeze().cpu().numpy()
     img1 = np.transpose(img1, [1,2,0])
     img2 = im2.squeeze().cpu().numpy()
@@ -75,7 +77,7 @@ for im1, im2, l1, na in tqdm(loader):
     lm = lm.squeeze()
     lm = color_label[lm] / 255.0
     name = na[0]
-
+    
     targets = [SemanticSegmentationTarget(1, label)]
 
     img1 = normalize(img1)

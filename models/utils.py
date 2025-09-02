@@ -214,22 +214,15 @@ class FFN(nn.Module):
         self.dim = dim
         self.dim_sp = dim // 2
 
-        self.conv_init = nn.Sequential(
-            nn.Conv2d(dim, 2*dim, 1),
-        )
+        self.conv_init = nn.Conv2d(dim, 2*dim, 1)
 
-        self.conv1_1 = nn.Sequential(
-            nn.Conv2d(self.dim_sp, self.dim_sp, kernel_size=3, padding=1,
-                      groups=self.dim_sp),
-        )
-        self.conv1_2 = nn.Sequential(
-            nn.Conv2d(self.dim_sp, self.dim_sp, kernel_size=5, padding=2,
-                      groups=self.dim_sp),
-        )
-        self.conv1_3 = nn.Sequential(
-            nn.Conv2d(self.dim_sp, self.dim_sp, kernel_size=7, padding=3,
-                      groups=self.dim_sp),
-        )
+        self.conv1_1 = nn.Conv2d(self.dim_sp, self.dim_sp, kernel_size=3, padding=1,
+                        groups=self.dim_sp)
+        self.conv1_2 = nn.Conv2d(self.dim_sp, self.dim_sp, kernel_size=5, padding=2,
+                        groups=self.dim_sp)
+        
+        self.conv1_3 = nn.Conv2d(self.dim_sp, self.dim_sp, kernel_size=7, padding=3,
+                        groups=self.dim_sp)
 
         # self.conv1_1 = nn.Sequential(
         #     nn.Conv2D(self.dim_sp, self.dim_sp, kernel_size=3, padding=1,
@@ -251,7 +244,7 @@ class FFN(nn.Module):
 
     def forward(self, x):
         x = self.conv_init(x)
-        x = torch.split(x, 4, dim=1)
+        x = list(torch.split(x, self.dim_sp, dim=1)) 
         x[1] = self.conv1_1(x[1])
         x[2] = self.conv1_2(x[2])
         x[3] = self.conv1_3(x[3])
