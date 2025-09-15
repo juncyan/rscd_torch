@@ -529,7 +529,10 @@ class MFNet(nn.Module):
         self.decoder = Decoder(encoder_channels, decode_channels, dropout, window_size, args.num_classes)
         # self.decoder = Decoder_single(encoder_channels, decode_channels, dropout, window_size, num_classes)
 
-    def forward(self, x, y, mode='Train'):
+    def forward(self, x, y=None, mode='Train'):
+        if y == None:
+            y = x[:,3:,:,:]
+            x = x[:,:3,:,:]
         h, w = x.size()[-2:]
         # y = torch.unsqueeze(y, dim=1).repeat(1,3,1,1)
         deepx, deepy = self.image_encoder(x, y) # 256*16*16

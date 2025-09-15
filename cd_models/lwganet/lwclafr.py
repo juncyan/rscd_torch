@@ -64,7 +64,10 @@ class CLAFR_LWGA(nn.Module):
         # init_method(self.fpn, self.p5_to_p4, self.p4_to_p3, self.p3_to_p2, self.p5_head, self.p4_head,
         #             self.p3_head, self.p2_head, init_type=init_type)
 
-    def forward(self, x1, x2):
+    def forward(self, x1, x2=None):
+        if x2 == None:
+            x2 = x1[:,3:,:,:]
+            x1 = x1[:,:3,:,:]
         sz = x1.shape[-2:]
         ### Extract backbone features
         if self.backbone_name == 'lwganet_l0' or self.backbone_name == 'lwganet_l2':
