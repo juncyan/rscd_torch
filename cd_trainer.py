@@ -46,7 +46,7 @@ from cd_models.mfnet import MFNet
 
 from cd_models.unet import net_factory
 
-from models.fgfp import FGFPVM_CD
+from models.demo import Demo_CD
 
 from core.bcdwork import Work
 
@@ -111,7 +111,8 @@ if __name__ == "__main__":
     # model = EAFHNet()
     # model = SCD_SAM_BCD(input_size=args.img_size)
     # model = Meta_CD(dev=args.device)
-    model = MFNet(args=args)
+    # model = MFNet(args=args)
+    model = Demo_CD(img_size=args.img_size)
     w = Work(model, args)
     
     

@@ -4,7 +4,7 @@ import argparse
 # from cd_models.ultralight_unet import UltraLightUNet
 # from cd_models.unet import net_factory
 
-from models.fgfp import FGFPVM_Seg
+from models.demo import FGFPVM_Seg
 from core.segwork import Work
 
 # dataset_name = "GVLM_CD"

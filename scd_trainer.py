@@ -17,7 +17,7 @@ from cd_models.daudt.HRSCD4 import HRSCD4
 from cd_models.ssesn import SSESN
 from cd_models.cdsc import CDSC
 from cd_models.btscd import BTSCD
-from cd_models.cienet import FESCD_VMB
+from models.demo import Demo_SCD
 # from scdmodel.scd import SCDSam_CrossA
 # from scdmodel.sam_mamba import SCDSamMamba, SCDSamMambaLK
 
@@ -86,6 +86,7 @@ if __name__ == "__main__":
     # model = SCDSamMambaLK(img_size=args.img_size, num_seg=args.num_classes)
     # model = FESCD_VMB(args.img_size, args.num_classes)
     model = BTSCD(num_classes=args.num_classes)
+    model = Demo_SCD(img_size=args.img_size, num_seg=args.num_classes)
     w = Work(model, args)
     
     

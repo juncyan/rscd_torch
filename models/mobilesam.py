@@ -12,13 +12,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
-from timm.models.layers import DropPath as TimmDropPath,\
-    to_2tuple, trunc_normal_
-from timm.models.registry import register_model
 from typing import Tuple
 from collections import OrderedDict
-from typing import Any, Dict, List, Tuple, Union
+from typing import List, Tuple
 import numpy as np
+
+from .droppath import drop_path, to_2tuple, trunc_normal_
 
 class Conv2d_BN(torch.nn.Sequential):
     def __init__(self, a, b, ks=1, stride=1, pad=0, dilation=1,
@@ -45,15 +44,29 @@ class Conv2d_BN(torch.nn.Sequential):
         return m
 
 
-class DropPath(TimmDropPath):
-    def __init__(self, drop_prob=None):
-        super().__init__(drop_prob=drop_prob)
+class DropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
+    """
+    def __init__(self, drop_prob: float = 0., scale_by_keep: bool = True):
+        super(DropPath, self).__init__()
         self.drop_prob = drop_prob
+        self.scale_by_keep = scale_by_keep
 
-    def __repr__(self):
-        msg = super().__repr__()
-        msg += f'(drop_prob={self.drop_prob})'
-        return msg
+    def forward(self, x):
+        return drop_path(x, self.drop_prob, self.training, self.scale_by_keep)
+
+    def extra_repr(self):
+        return f'drop_prob={round(self.drop_prob,3):0.3f}'
+
+# class DropPath(TimmDropPath):
+#     def __init__(self, drop_prob=None):
+#         super().__init__(drop_prob=drop_prob)
+#         self.drop_prob = drop_prob
+
+#     def __repr__(self):
+#         msg = super().__repr__()
+#         msg += f'(drop_prob={self.drop_prob})'
+#         return msg
 
 
 class PatchEmbed(nn.Module):
@@ -679,7 +692,7 @@ class Sam(nn.Module):
         x = F.pad(x, (0, padw, 0, padh))
         return x
             
-def build_sam_vit_t(img_size=512):
+def build_sam_vit_t(img_size=512, sam_checkpoint = "/home/jq/Code/weights/mobile_sam.pt"):
     mobile_sam = Sam(
             image_encoder=TinyViT(img_size=img_size, in_chans=3, num_classes=1000,
                 embed_dims=[64, 128, 160, 320],

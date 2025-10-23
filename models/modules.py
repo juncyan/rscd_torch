@@ -11,8 +11,34 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat, einsum
 
-from cd_models.vmamba import SS2D, VSSBlock
-from .utils import ConvBNAct, FFN
+class ConvBNAct(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, dilation=1, groups=1, padding=0, bias=True, act='relu',channel_first=True):
+        super().__init__()
+        self.channel_first = channel_first
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.act = nn.ReLU()
+        if act == "silu":
+            self.act = nn.SiLU()
+        elif act == 'gelu':
+            self.act = nn.GELU()
+        elif act == 'softmax':
+            self.act = nn.Softmax()
+        elif act == "sigmoid":
+            self.act == nn.Sigmoid()
+    
+    def forward(self, input):
+        if self.channel_first:
+            x = input
+        else:
+            x = input.permute(0, 3, 1, 2)
+        y = self.conv(x)
+        y = self.bn(y)
+        y = self.act(y)
+        if self.channel_first:
+            return y
+        y = y.permute(0, 2, 3, 1)
+        return y
 
 class downsample(nn.Module):
     def __init__(self, in_channels, out_channels, down_ratio=2):
@@ -24,29 +50,6 @@ class downsample(nn.Module):
         x = self.conv1(x)
         x = self.conv2(x)
         return x
-
-class AdaptiveSS2D(nn.Module):   
-    def __init__(self, in_chs, out_chs, down_ratio=4):
-        super().__init__()
-        self.ds = downsample(in_chs, out_chs, down_ratio)
-        self.pool = nn.Sequential(
-                    nn.Conv2d(out_chs, out_chs, kernel_size=1),
-                    nn.BatchNorm2D(out_chs),
-                    nn.ReLU(),
-                    nn.AdaptiveAvgPool2D(1)
-                    )
-        self.token = nn.Sequential(SS2D(out_chs),
-                                   nn.ModuleNorm(out_chs, epsilon=1e-6))
-    
-    def forward(self, x):
-        x = self.ds(x)
-        x1 = self.pool(x)
-        x = rearrange(x, 'b c h w -> b h w c')
-        x = self.token(x)
-        x = rearrange(x, 'b h w c -> b c h w')
-        y = x + x1
-        # y = self.cb(y)
-        return y
 
 class Local_Feature_Gather(nn.Module):
     def __init__(self, dim):
@@ -71,7 +74,8 @@ class Global_Feature_Gather(nn.Module):
             nn.Conv2d(dim, dim * 2, 1),
             nn.GELU())
         
-        self.token = SS2D(self.dim * 2)
+        self.token = ConvBNAct(self.dim * 2, self.dim * 2, 3, act='silu', padding=1)
+         # layers.ConvBNReLU(self.dim * 2, self.dim * 2, 3)
         self.conv_fina = nn.Sequential(
             nn.Conv2d(2*dim, dim, 1),
             nn.GELU()) 
@@ -79,10 +83,7 @@ class Global_Feature_Gather(nn.Module):
     def forward(self, x):
         x = self.conv_init(x)
         x0 = x
-        x = rearrange(x, 'b c h w -> b h w c')
         x = self.token(x)
-        x = rearrange(x, 'b h w c -> b c h w')
-        
         x = self.conv_fina(x + x0)
         return x
 
@@ -187,87 +188,6 @@ class SegDecoder(nn.Module):
         
         return y
     
-    # def train(train_loader, network, criterion, optimizer):
-    #     losses = np.array([0.])
-    #     for batch in train_loader:
-    #         source_img = batch['source'].cuda()
-    #         target_img = batch['target'].cuda()
-
-    #         pred_img = network(source_img)
-    #         label_img = target_img
-    #         l3 = criterion(pred_img, label_img)
-    #         loss_content = l3
-
-    #         label_fft3 = torch.fft.fft2(label_img, dim=(-2, -1))
-    #         label_fft3 = torch.stack((label_fft3.real, label_fft3.imag), -1)
-
-    #         pred_fft3 = torch.fft.fft2(pred_img, dim=(-2, -1))
-    #         pred_fft3 = torch.stack((pred_fft3.real, pred_fft3.imag), -1)
-
-    #         f3 = criterion(pred_fft3, label_fft3)
-    #         loss_fft = f3
-
-
-    #         loss = loss_content + 0.1 * loss_fft
-    #         losses.update(loss.item())
-
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         optimizer.step()
-
-    #     return losses.avg
-
-class PyramidMamba(nn.Module):
-    def __init__(self, in_chs=512, dim=128, d_state=16, d_conv=4, expand=2, last_feat_size=16):
-        super().__init__()
-        pool_scales = self.generate_arithmetic_sequence(1, last_feat_size, last_feat_size // 4)
-        self.pool_len = len(pool_scales)
-        self.pool_layers = nn.ModuleList()
-        self.pool_layers.append(nn.Sequential(
-                    nn.Conv2d(in_chs, dim, kernel_size=1),
-                    nn.BatchNorm2D(dim),
-                    nn.ReLU(),
-                    nn.AdaptiveAvgPool2D(1)
-                    ))
-        for pool_scale in pool_scales[1:]:
-            self.pool_layers.append(
-                nn.Sequential(
-                    nn.AdaptiveAvgPool2D(pool_scale),
-                    nn.Conv2d(in_chs, dim, kernel_size=1),
-                    nn.BatchNorm2D(dim),
-                    nn.ReLU(),
-                    ))
-        self.mamba = SS2D(dim* self.pool_len + in_chs)#SS2D(dim* self.pool_len + in_chs)
-        self.cbr = ConvBNAct(dim* self.pool_len + in_chs, dim, 1, act='gelu')
-       
-        # self.mamba = MambaLayer(
-        #     d_model=dim*self.pool_len+in_chs,  # Model dimension d_model
-        #     d_state=d_state,  # SSM state expansion factor
-        #     d_conv=d_conv,  # Local convolution width
-        #     expand=expand # Block expansion factor
-        # )
-
-    def forward(self, x): # B, C, H, W
-        res = x
-        B, C, H, W = res.shape
-        ppm_out = [res]
-        for p in self.pool_layers:
-            pool_out = p(x)
-            pool_out = F.interpolate(pool_out, (H, W), mode='bilinear', align_corners=False)
-            ppm_out.append(pool_out)
-        x = torch.concat(ppm_out, dim=1)
-        x = rearrange(x, 'b c h w -> b h w c')
-        x = self.mamba(x)
-        x = rearrange(x, 'b h w c -> b c h w')
-        # x = x.transpose(2, 1).view(B, chs, H, W)
-        x = self.cbr(x)
-        return x
-
-    def generate_arithmetic_sequence(self, start, stop, step):
-        sequence = []
-        for i in range(start, stop, step):
-            sequence.append(i)
-        return sequence
 
 class AdditiveTokenMixer(nn.Module):
     def __init__(self, dim=512):
@@ -297,13 +217,13 @@ class ParallChangeInformationFusion(nn.Module):
         self.W_g = nn.Conv2d(in_chs1, out_chs, kernel_size=1,stride=1)
         self.W_x = nn.Conv2d(in_chs2, out_chs, kernel_size=1,stride=1)
 
-        self.token = VSSBlock(out_chs)
+        self.token = ConvBNAct(out_chs, out_chs, 3, act='silu', padding=1)
 
         self.psi = nn.Sequential(
             nn.ReLU(),
             ConvBNAct(out_chs, 1, 1, act='sigmoid'),
         )
-        self.cbr = ConvBNAct(out_chs, out_chs, 3, act='silu')
+        self.cbr = ConvBNAct(out_chs, out_chs, 3, act='silu', padding=1)
         
 
     def forward(self, g, x):
@@ -312,12 +232,8 @@ class ParallChangeInformationFusion(nn.Module):
         g1 = F.interpolate(g1, size=sz, mode='bilinear', align_corners=False)
         x1 = self.W_x(x)
 
-        y = g1 + x1
-        # y1 = torch.transpose(y, [0, 2, 3, 1])
-        y1 = rearrange(y, 'b c h w -> b h w c')
-        y1 = self.token(y1)
-        # y1 = torch.transpose(y1, [0, 3, 1, 2])
-        y1 = rearrange(y1, 'b h w c -> b c h w')
+        y = g1 + x1 
+        y1 = self.token(y)
         y2 = self.psi(y)
         y2 = y2 * x1
         y2 = y2 + y1
@@ -329,7 +245,7 @@ class CoarseInteractiveFeaturesExtraction(nn.Module):
     def __init__(self, dim=512):
         super().__init__()
         self.conv1 = nn.Conv2d(2*dim, dim, 1)
-        self.token = VSSBlock(dim)
+        self.token = ConvBNAct(dim, dim, 3, act='silu', padding=1)
         self.conv2 = nn.Conv2d(dim, dim, 1)
         self.ffn = FFN(dim)
     
@@ -341,9 +257,7 @@ class CoarseInteractiveFeaturesExtraction(nn.Module):
         x[:, 1::2, ...] = x2
 
         x = self.conv1(x)
-        x = rearrange(x, 'b c h w -> b h w c')
         x = self.token(x)
-        x = rearrange(x, 'b h w c -> b c h w')
         x = self.conv2(x)
 
         x = x + x1 + x2
@@ -351,55 +265,6 @@ class CoarseInteractiveFeaturesExtraction(nn.Module):
 
         return x
 
-class GlobalTokenAttention(nn.Module):
-    def __init__(self, embed_dim,
-                 head_num=4,
-                 **kwargs):
-        super().__init__()
-    
-        self.embed_dim = embed_dim
-        self.head_num = head_num
-        self.scale = embed_dim ** -0.5
-        
-        self.qkv = nn.Conv2d(embed_dim, embed_dim*3, kernel_size=1)
-        self.proj = nn.Conv2d(embed_dim, embed_dim, kernel_size=1)
-        
-        self.lepe = nn.Conv2d(embed_dim, embed_dim, 3, padding=1) 
-        self.ssm = VSSBlock(embed_dim)
-            
-    #     self._init_params_()
-
-    # def _init_params_(self):
-    #     nn.initializer.XavierNormal(gain=2**-2.5)(self.qkv.weight)
-    #     nn.initializer.Constant(0.)(self.qkv.bias)
-    #     nn.initializer.XavierNormal(gain=2**-2.5)(self.proj.weight)
-    #     nn.initializer.Constant(0.)(self.proj.bias)
-
-    def forward(self, x):
-        
-        B, C, H, W = x.shape
-        
-        qkv = self.qkv(x)
-        lepe = qkv[:, -C:, ...]
-        
-        q, k, v = rearrange(qkv, 'b (m n c) h w -> m b h n w c', m=3, n=self.head_num)
-        k = rearrange(k, 'b n h w c -> b n h c w')
-        attn = (q @ k) * self.scale
-        attn = F.softmax(attn, dim=-1)
-    
-        y = attn @ v
-        y = rearrange(y, 'b h n w c -> b h w n c')
-        y = torch.reshape(y, [B, H, W, -1])
-        
-        lepe = self.lepe(lepe)
-        lepe = rearrange(lepe, 'b c h w -> b h w c')
-        lepe = self.ssm(lepe)
-
-        y = y + lepe
-        y = rearrange(y, 'b h w c -> b c h w')
-        y = self.proj(y)
-        
-        return y
 
 class GlobalAttention(nn.Module):
     def __init__(self, dim, head_dim=4, num_heads=None, qkv_bias=False,
@@ -435,3 +300,52 @@ class GlobalAttention(nn.Module):
         x = self.proj_drop(x)
         x = x.permute(0, 3, 1, 2)
         return x
+
+
+class FFN(nn.Module):
+    def __init__(self, dim):
+        super(FFN, self).__init__()
+        self.dim = dim
+        self.dim_sp = dim // 2
+
+        self.conv_init = nn.Conv2d(dim, 2*dim, 1)
+
+        self.conv1_1 = nn.Conv2d(self.dim_sp, self.dim_sp, kernel_size=3, padding=1,
+                        groups=self.dim_sp)
+        self.conv1_2 = nn.Conv2d(self.dim_sp, self.dim_sp, kernel_size=5, padding=2,
+                        groups=self.dim_sp)
+        
+        self.conv1_3 = nn.Conv2d(self.dim_sp, self.dim_sp, kernel_size=7, padding=3,
+                        groups=self.dim_sp)
+
+        # self.conv1_1 = nn.Sequential(
+        #     nn.Conv2D(self.dim_sp, self.dim_sp, kernel_size=3, padding=1,
+        #               groups=self.dim_sp),
+        # )
+        # self.conv1_2 = nn.Sequential(
+        #     nn.Conv2D(self.dim_sp, self.dim_sp, kernel_size=3, padding=4,
+        #               groups=self.dim_sp, dilation=4),
+        # )
+        # self.conv1_3 = nn.Sequential(
+        #     nn.Conv2D(self.dim_sp, self.dim_sp, kernel_size=3, padding=7,
+        #               groups=self.dim_sp, dilation=7),
+        # )
+
+        self.gelu = nn.GELU()
+        self.conv_fina = nn.Sequential(
+            nn.Conv2d(self.dim_sp, dim, 1),
+        )
+
+    def forward(self, x):
+        x = self.conv_init(x)
+        x = list(torch.split(x, self.dim_sp, dim=1)) 
+        x[1] = self.conv1_1(x[1])
+        x[2] = self.conv1_2(x[2])
+        x[3] = self.conv1_3(x[3])
+        # y = paddle.concat(x, axis=1)
+        # y = x[0] + x[1]
+        y = x[0] + x[1] + x[2] + x[3]
+        y = self.gelu(y)
+        y = self.conv_fina(y)
+
+        return y

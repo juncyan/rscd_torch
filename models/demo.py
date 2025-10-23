@@ -12,10 +12,10 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat
 from cd_models.vmamba.mamba_backbone import VSSM, Backbone_VSSM
-from .sam_adaptor import build_sam_vit_t
-from .modules import Decoder, CoarseInteractiveFeaturesExtraction, MultiScaleFeatureGather, ParallChangeInformationFusion
+from .mobilesam import build_sam_vit_t
+from .modules import CoarseInteractiveFeaturesExtraction, MultiScaleFeatureGather, ParallChangeInformationFusion
 
-class FGFPVM_Seg(nn.Module):
+class Demo_Seg(nn.Module):
     #Fine-Grained Feature Processing for Segmentation
     def __init__(self, img_size, num_cls):
         super().__init__()
@@ -29,11 +29,9 @@ class FGFPVM_Seg(nn.Module):
         self.cls = nn.Conv2d(64, num_cls, 3, 1, 1)
 
         self.bk.eval()
-        for param in self.bk.parameters():
-            param.requires_grad = False
+        # for param in self.bk.parameters():
+        #     param.requires_grad = False
             
-
-    
     def encoder(self, x):
         x = self.bk.image_encoder.patch_embed(x)
         x = self.bk.image_encoder.layers[0](x)
@@ -76,7 +74,7 @@ class FGFPVM_Seg(nn.Module):
         y = self.cls(y)
         return y
 
-class FGFPVM_CD(FGFPVM_Seg):
+class Demo_CD(Demo_Seg):
     def __init__(self, img_size):
         super().__init__(img_size=img_size, num_cls=2)
         # self.img_size = img_size
@@ -105,7 +103,7 @@ class FGFPVM_CD(FGFPVM_Seg):
         return y
 
 
-class FGFPVM_SCD(FGFPVM_Seg):
+class Demo_SCD(Demo_Seg):
     def __init__(self, img_size, num_seg=7):
         super().__init__(img_size=img_size, num_cls=1)
 
@@ -143,22 +141,4 @@ class FGFPVM_SCD(FGFPVM_Seg):
         s1 = self.scls1(s1)
         s2 = self.scls1(s2)
         return y, s1, s2
-    
-    # @staticmethod
-    # def loss(logits,labels):
-    #     if len(labels.shape) == 4:
-    #         labels = torch.argmax(labels, 1)
-    #     if logits.shape == labels.shape:
-    #         labels = torch.argmax(labels,axis=1)
-    #     elif len(labels.shape) == 3:
-    #         labels = labels
-    #     else:
-    #         assert "pred.shape not match label.shape"
-    #     labels = torch.cast(labels, dtype='float32')
-    #     # logits = torch.tensor.cast(logits, dtype='float64')
-    #     ce_loss_1 = CrossEntropyLoss()(logits, labels)
-    #     # return ce_loss_1
-    #     lovasz_loss = LovaszSoftmaxLoss()(logits, labels)
-    #     main_loss = ce_loss_1 + 0.75 * lovasz_loss
-    #     return main_loss
     
