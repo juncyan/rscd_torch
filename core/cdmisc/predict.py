@@ -50,7 +50,7 @@ def predict(model, dataset, weight_path=None, data_name="test", num_classes=2, d
     if not os.path.isdir(img_dir):
         os.makedirs(img_dir)
 
-    color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[0,0,128]])
+    color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[128,0,0]])
 
     logger = load_logger(f"{img_dir}/prediction.log")
     logger.info(f"test {model_name} on {data_name}")
@@ -153,7 +153,7 @@ def test(model, dataset, args=None):
     logger = load_logger(f"{img_dir}/prediction.log")
     logger.info(f"test {args.dataset} on {args.model}")
    
-    color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[0,0,128]])
+    color_label = np.array([[0,0,0],[255,255,255],[0,128,0],[128,0,0]])
 
     evaluator = Metrics(num_class=args.num_classes)
 
