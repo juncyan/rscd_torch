@@ -86,20 +86,20 @@ def parse_args():
     args = parser.parse_args()
     return args
 args = parse_args()
-dataset_name = "SYSU_CD"
+dataset_name = "MacaoCD"
 dataset_path = '/mnt/data/Datasets/{}'.format(dataset_name)
 
-wp = r"/home/jq/Code/torch/output/sysu_cd/MFNet_2025_08_19_22/MFNet_best.pth"
+wp = r"/home/jq/Code/torch/output/macaocd/ISDANet_2025_03_08_14/ISDANet_best.pth"
 layer_state_dict = torch.load(f"{wp}")
 
-model = MFNet(args=args)
-model_name = "MFNet"#model.__str__().split("(")[0]
-target_layers = [model.decoder]  # for MambaBCD
+model = ISDANet()
+model_name = "ISDANet_test2"#model.__str__().split("(")[0]
+target_layers = [model.up1]  # for MambaBCD
 print(model_name)
 model.load_state_dict(layer_state_dict)
 model = model.eval()
 model = model.cuda()
-test_data = CDReader(dataset_path, mode="train")
+test_data = CDReader(dataset_path, mode="test")
 loader = DataLoader(dataset=test_data, batch_size=1, num_workers=0,shuffle=True, drop_last=True)
 
 save_dir = f"/mnt/data/Results/cam/{dataset_name}/{model_name}"
@@ -115,12 +115,12 @@ for im1, im2, l1, na in tqdm(loader):
     img2 = im2.squeeze().cpu().numpy()
     img2 = np.transpose(img2, [1,2,0])
     label = l1.numpy()
-    lm = np.argmax(label, 1)
-    lm = lm.squeeze()
+    lml = np.argmax(label, 1, keepdims=True)
+    lm = lml.squeeze()
     lm = color_label[lm] / 255.0
     name = na[0]
     
-    targets = [SemanticSegmentationTarget(1, label)]
+    targets = [SemanticSegmentationTarget(0, lml)]
 
     img1 = normalize(img1)
     img2 = normalize(img2)

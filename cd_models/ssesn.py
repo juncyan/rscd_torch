@@ -41,8 +41,7 @@ class SSESN(nn.Module):
         self.aspp3 = ASPP_module(2048, 256, rate=rates[2])
         self.aspp4 = ASPP_module(2048, 256, rate=rates[3])
 
-        self.global_avg_pool = nn.Sequential(nn.AdaptiveAvgPool2d((1, 1)),
-                                             nn.Conv2d(2048, 256, 1, stride=1, bias=False),
+        self.global_avg_pool = nn.Sequential(nn.Conv2d(2048, 256, 1, stride=1, bias=False),
                                              nn.BatchNorm2d(256),
                                              nn.ReLU(inplace=True))
         self.project = nn.Sequential(nn.Conv2d(1280, 256, 1, bias=False),
@@ -68,7 +67,8 @@ class SSESN(nn.Module):
         x_enc_2 = self.aspp2(x_enc)   #[1, 256, 32, 32]
         x_enc_3 = self.aspp3(x_enc)   #[1, 256, 32, 32]
         x_enc_4 = self.aspp4(x_enc)   #[1, 256, 32, 32]
-        x_enc_5 = self.global_avg_pool(x_enc) #[1, 256, 1, 1]
+        x1 = F.adaptive_avg_pool2d(x_enc, (1,1))
+        x_enc_5 = self.global_avg_pool(x1) #[1, 256, 1, 1]
         x_enc_5 = F.interpolate(x_enc_5, size=x_enc_4.size()[2:], mode='bilinear', align_corners=False)
 
         x_enc = torch.cat((x_enc_1, x_enc_2, x_enc_3, x_enc_4, x_enc_5), dim=1)
@@ -81,6 +81,7 @@ class SSESN(nn.Module):
         input = torch.cat([input1, input2], 1)
 
         # enc_1
+        F1 = self.forward_post(input1)
         x_enc1, fourth_level_features_1, eighth_level_features_1, sixteenth_level_features_1 = self.forward_post(input1)
         
         # spatial-semantic aggregration

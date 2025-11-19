@@ -10,14 +10,14 @@ import os
 # 模型导入
 
 from cd_models.mambacd import build_STMambaSCD
-from cd_models.scd_sam import SCD_SAM
+# from cd_models.scd_sam import SCD_SAM
 from cd_models.bisrnet import BiSRNet, SSCDl
 from cd_models.daudt.HRSCD3 import HRSCD3
 from cd_models.daudt.HRSCD4 import HRSCD4
 from cd_models.ssesn import SSESN
 from cd_models.cdsc import CDSC
 from cd_models.btscd import BTSCD
-from models.demo import Demo_SCD
+from cd_models.siamcontrast import SiamContrast
 # from scdmodel.scd import SCDSam_CrossA
 # from scdmodel.sam_mamba import SCDSamMamba, SCDSamMambaLK
 
@@ -85,8 +85,8 @@ if __name__ == "__main__":
     # model = BiSRNet(num_classes=args.num_classes)
     # model = SCDSamMambaLK(img_size=args.img_size, num_seg=args.num_classes)
     # model = FESCD_VMB(args.img_size, args.num_classes)
-    model = BTSCD(num_classes=args.num_classes)
-    model = Demo_SCD(img_size=args.img_size, num_seg=args.num_classes)
+    # model = BTSCD(num_classes=args.num_classes)
+    model = SiamContrast(num_class=args.num_classes)
     w = Work(model, args)
     
     

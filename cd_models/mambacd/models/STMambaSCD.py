@@ -111,12 +111,12 @@ class Args:
     cfg = '/home/jq/Code/VMamba/lccdmamba/configs/vssm/vssm_tiny_224.yaml'
     opts = None
 
-def build_STMambaSCD(args):
+def build_STMambaSCD():
     mparas = Args()
     config = get_config(mparas)
     # config = get_config(args)
     model = STMambaSCD(
-            pretrained="/home/jq/Code/weights/vssm_tiny_0230_ckpt_epoch_262.pth", #args.pretrained_weight_path,
+            pretrained="/mnt/data/weights/weights/vssm_tiny_0230_ckpt_epoch_262.pth", #args.pretrained_weight_path,
     
             patch_size=config.MODEL.VSSM.PATCH_SIZE, 
             in_chans=config.MODEL.VSSM.IN_CHANS, 

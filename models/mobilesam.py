@@ -17,6 +17,8 @@ from collections import OrderedDict
 from typing import List, Tuple
 import numpy as np
 
+import models.loralib as lora
+
 from .droppath import drop_path, to_2tuple, trunc_normal_
 
 class Conv2d_BN(torch.nn.Sequential):
@@ -204,31 +206,39 @@ class ConvLayer(nn.Module):
 
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None,
-                 out_features=None, act_layer=nn.GELU, drop=0.):
+                 out_features=None, act_layer=nn.GELU, drop=0.,
+                 rank=8):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.norm = nn.LayerNorm(in_features)
-        self.fc1 = nn.Linear(in_features, hidden_features)
-        self.fc2 = nn.Linear(hidden_features, out_features)
+        # self.fc1 = nn.Linear(in_features, hidden_features)
+        # self.fc2 = nn.Linear(hidden_features, out_features)
+        self.fc1 = lora.BiLinear(in_features, hidden_features, r = rank)
+        self.fc2 = lora.BiLinear(hidden_features, out_features, r = rank)
         self.act = act_layer()
         self.drop = nn.Dropout(drop)
 
-    def forward(self, x):
+    def forward(self, x, y):
         x = self.norm(x)
+        y = self.norm(y)
 
-        x = self.fc1(x)
+        x, y = self.fc1(x, y)
         x = self.act(x)
+        y = self.act(y)
         x = self.drop(x)
-        x = self.fc2(x)
+        y = self.drop(y)
+        x, y = self.fc2(x, y)
         x = self.drop(x)
-        return x
+        y = self.drop(y)
+        return x, y
 
 
 class Attention(torch.nn.Module):
     def __init__(self, dim, key_dim, num_heads=8,
                  attn_ratio=4,
                  resolution=(14, 14),
+                 rank=8
                  ):
         super().__init__()
         # (h, w)
@@ -243,8 +253,11 @@ class Attention(torch.nn.Module):
         h = self.dh + nh_kd * 2
 
         self.norm = nn.LayerNorm(dim)
-        self.qkv = nn.Linear(dim, h)
-        self.proj = nn.Linear(self.dh, dim)
+        # self.qkv = nn.Linear(dim, h)
+        # self.proj = nn.Linear(self.dh, dim)
+        self.qkv = lora.BiLinear(dim, h, r = rank)
+        self.proj = lora.BiLinear(self.dh, dim, r = rank)
+        
 
         points = list(itertools.product(
             range(resolution[0]), range(resolution[1])))
@@ -273,20 +286,25 @@ class Attention(torch.nn.Module):
                                  self.attention_biases[:, self.attention_bias_idxs],
                                  persistent=False)
 
-    def forward(self, x):  # x (B,N,C)
+    def forward(self, x, y):  # x (B,N,C)
         B, N, _ = x.shape
-
         # Normalization
         x = self.norm(x)
+        y = self.norm(y)
 
-        qkv = self.qkv(x)
+        qkv, yqkv = self.qkv(x, y)
+
         # (B, N, num_heads, d)
-        q, k, v = qkv.view(B, N, self.num_heads, -
-                           1).split([self.key_dim, self.key_dim, self.d], dim=3)
+        q, k, v = qkv.view(B, N, self.num_heads, - 1).split([self.key_dim, self.key_dim, self.d], dim=3)
+        qy, ky, vy = yqkv.view(B, N, self.num_heads, -1).split([self.key_dim, self.key_dim, self.d], dim=3)
         # (B, num_heads, N, d)
         q = q.permute(0, 2, 1, 3)
         k = k.permute(0, 2, 1, 3)
         v = v.permute(0, 2, 1, 3)
+
+        qy = qy.permute(0, 2, 1, 3)
+        ky = ky.permute(0, 2, 1, 3)
+        vy = vy.permute(0, 2, 1, 3)
 
         attn = (
             (q @ k.transpose(-2, -1)) * self.scale
@@ -296,8 +314,18 @@ class Attention(torch.nn.Module):
         )
         attn = attn.softmax(dim=-1)
         x = (attn @ v).transpose(1, 2).reshape(B, N, self.dh)
-        x = self.proj(x)
-        return x
+
+        attny = (
+            (qy @ ky.transpose(-2, -1)) * self.scale
+            +
+            (self.attention_biases[:, self.attention_bias_idxs]
+             if self.training else self.ab)
+        )
+        attny = attny.softmax(dim=-1)
+        y = (attny @ vy).transpose(1, 2).reshape(B, N, self.dh)
+
+        x, y = self.proj(x, y)
+        return x, y
 
 
 class TinyViTBlock(nn.Module):
@@ -320,6 +348,7 @@ class TinyViTBlock(nn.Module):
                  mlp_ratio=4., drop=0., drop_path=0.,
                  local_conv_size=3,
                  activation=nn.GELU,
+                 rank = 8,
                  ):
         super().__init__()
         self.dim = dim
@@ -337,27 +366,32 @@ class TinyViTBlock(nn.Module):
 
         window_resolution = (window_size, window_size)
         self.attn = Attention(dim, head_dim, num_heads,
-                              attn_ratio=1, resolution=window_resolution)
+                              attn_ratio=1, 
+                              resolution=window_resolution, 
+                              rank=rank)
 
         mlp_hidden_dim = int(dim * mlp_ratio)
         mlp_activation = activation
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim,
-                       act_layer=mlp_activation, drop=drop)
+                       act_layer=mlp_activation, drop=drop,
+                       rank=rank)
 
         pad = local_conv_size // 2
         self.local_conv = Conv2d_BN(
             dim, dim, ks=local_conv_size, stride=1, pad=pad, groups=dim)
 
-    def forward(self, x):
+    def forward(self, x, y):
         H, W = self.input_resolution
         B, L, C = x.shape
         # print( B, L, C,H, W)
         assert L == H * W, "input feature has wrong size"
         res_x = x
+        res_y = y
         if H == self.window_size and W == self.window_size:
-            x = self.attn(x)
+            x, y = self.attn(x, y)
         else:
             x = x.view(B, H, W, C)
+            y = y.view(B, H, W, C)
             pad_b = (self.window_size - H %
                      self.window_size) % self.window_size
             pad_r = (self.window_size - W %
@@ -366,6 +400,7 @@ class TinyViTBlock(nn.Module):
 
             if padding:
                 x = F.pad(x, (0, 0, 0, pad_r, 0, pad_b))
+                y = F.pad(y, (0, 0, 0, pad_r, 0, pad_b))
 
             pH, pW = H + pad_b, W + pad_r
             nH = pH // self.window_size
@@ -373,24 +408,38 @@ class TinyViTBlock(nn.Module):
             # window partition
             x = x.view(B, nH, self.window_size, nW, self.window_size, C).transpose(2, 3).reshape(
                 B * nH * nW, self.window_size * self.window_size, C)
-            x = self.attn(x)
+            y = y.view(B, nH, self.window_size, nW, self.window_size, C).transpose(2, 3).reshape(
+                B * nH * nW, self.window_size * self.window_size, C)
+            x, y = self.attn(x, y)
             # window reverse
             x = x.view(B, nH, nW, self.window_size, self.window_size,
+                       C).transpose(2, 3).reshape(B, pH, pW, C)
+            y = y.view(B, nH, nW, self.window_size, self.window_size,
                        C).transpose(2, 3).reshape(B, pH, pW, C)
 
             if padding:
                 x = x[:, :H, :W].contiguous()
+                y = y[:, :H, :W].contiguous()
 
             x = x.view(B, L, C)
+            y = y.view(B, L, C)
 
         x = res_x + self.drop_path(x)
+        y = res_y + self.drop_path(y)
 
         x = x.transpose(1, 2).reshape(B, C, H, W)
         x = self.local_conv(x)
         x = x.view(B, C, L).transpose(1, 2)
 
-        x = x + self.drop_path(self.mlp(x))
-        return x
+        y = y.transpose(1, 2).reshape(B, C, H, W)
+        y = self.local_conv(y)
+        y = y.view(B, C, L).transpose(1, 2)
+
+        xmlp, ymlp = self.mlp(x, y)
+
+        x = x + self.drop_path(xmlp)
+        y = y + self.drop_path(ymlp)
+        return x, y
 
     def extra_repr(self) -> str:
         return f"dim={self.dim}, input_resolution={self.input_resolution}, num_heads={self.num_heads}, " \
@@ -422,6 +471,7 @@ class BasicLayer(nn.Module):
                  local_conv_size=3,
                  activation=nn.GELU,
                  out_dim=None,
+                 rank=8
                  ):
 
         super().__init__()
@@ -442,6 +492,7 @@ class BasicLayer(nn.Module):
                              drop_path, list) else drop_path,
                          local_conv_size=local_conv_size,
                          activation=activation,
+                         rank=rank
                          )
             for i in range(depth)])
 
@@ -452,20 +503,20 @@ class BasicLayer(nn.Module):
         else:
             self.downsample = None
 
-    def forward(self, x):
+    def forward(self, x, y):
       
-          
         for blk in self.blocks:
           
             if self.use_checkpoint:
-                x = checkpoint.checkpoint(blk, x)
+                x, y = checkpoint.checkpoint(blk, x, y)
             else:
-                x = blk(x)
+                x, y = blk(x, y)
         
         if self.downsample is not None:
             x = self.downsample(x)
+            y = self.downsample(y)
           
-        return x
+        return x, y
 
     def extra_repr(self) -> str:
         return f"dim={self.dim}, input_resolution={self.input_resolution}, depth={self.depth}"
@@ -496,6 +547,7 @@ class TinyViT(nn.Module):
                  mbconv_expand_ratio=4.0,
                  local_conv_size=3,
                  layer_lr_decay=1.0,
+                 rank = 8,
                  ):
         super().__init__()
         self.img_size=img_size
@@ -550,6 +602,7 @@ class TinyViT(nn.Module):
                     mlp_ratio=self.mlp_ratio,
                     drop=drop_rate,
                     local_conv_size=local_conv_size,
+                    rank=rank,
                     **kwargs)
             self.layers.append(layer)
 
@@ -632,22 +685,30 @@ class TinyViT(nn.Module):
     #     # x=x.permute(0, 3, 1, 2)
     #     return x
 
-    def forward_features(self, x):
+    def forward_features(self, x, y):
         # x: (N, C, H, W)
         x = self.patch_embed(x)
         x = self.layers[0](x)
+
+        y = self.patch_embed(y)
+        y = self.layers[0](y)
+        
         start_i = 1
-        features=[x]
-        B,N,C=x.size()
-        WH=int(np.sqrt(N))
-        x1 = x.view(B, WH, WH, C)
-        x1=x1.permute(0, 3, 1, 2)
+        # features=[x]
+        # featureys = [y]
+
+        # B,N,C=x.size()
+        # WH=int(np.sqrt(N))
+        # x1 = x.view(B, WH, WH, C)
+        # x1=x1.permute(0, 3, 1, 2)
+
         # features.append(x1)
         for i in range(start_i, len(self.layers)):
             layer = self.layers[i]
-            x = layer(x)
+            x, y = layer(x, y)
             # x2=self.convert(x)
-            features.append(x)
+            # features.append(x)
+            # featureys.append(y)
      
         B,N,C=x.size()
                                     
@@ -655,12 +716,15 @@ class TinyViT(nn.Module):
         x= x.view(B, WH, WH, C)
         x=x.permute(0, 3, 1, 2)
         x=self.neck(x)
-        features.append(x)
-        return features
+        y = y.view(B, WH, WH, C)
+        y = y.permute(0, 3, 1, 2)
+        y = self.neck(y)
+        # features.append(x)
+        return x, y
 
-    def forward(self, x):
-        x = self.forward_features(x)
-        return x
+    def forward(self, x, y):
+        x, y = self.forward_features(x, y)
+        return x, y
 
 
 class Sam(nn.Module):
@@ -692,7 +756,7 @@ class Sam(nn.Module):
         x = F.pad(x, (0, padw, 0, padh))
         return x
             
-def build_sam_vit_t(img_size=512, sam_checkpoint = "/home/jq/Code/weights/mobile_sam.pt"):
+def build_sam_vit_t(img_size=512, rank=8, sam_checkpoint = "/mnt/data/weights/mobile_sam.pt"):
     mobile_sam = Sam(
             image_encoder=TinyViT(img_size=img_size, in_chans=3, num_classes=1000,
                 embed_dims=[64, 128, 160, 320],
@@ -705,10 +769,11 @@ def build_sam_vit_t(img_size=512, sam_checkpoint = "/home/jq/Code/weights/mobile
                 use_checkpoint=False,
                 mbconv_expand_ratio=4.0,
                 local_conv_size=3,
-                layer_lr_decay=0.8))
+                layer_lr_decay=0.8,
+                rank=rank))
     
     model_dict = mobile_sam.state_dict()
-    sam_checkpoint = "/home/jq/Code/weights/mobile_sam.pt"
+    # sam_checkpoint = "/home/jq/Code/weights/mobile_sam.pt"
     pretrained_dict = torch.load(sam_checkpoint)
 
     # 寻找网络中公共层，并保留预训练参数

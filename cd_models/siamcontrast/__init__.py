@@ -1,0 +1,1 @@
+from .multitask_cd_model import SiamContrast
